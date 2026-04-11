@@ -18,10 +18,18 @@
         <div style="font-size:50px">✅</div>
         <h2 style="margin:15px 0; color:#10b981">已处理</h2>
         <p style="color:#64748b; line-height: 1.6;">另一位车主已接单处理<br>您无需重复操作，辛苦了！</p>
+        
+        <div id="mapArea" class="map-box">
+          <p style="font-size:14px; color:#2563eb; margin-bottom:12px; font-weight:bold">车辆所在位置 📍</p>
+          <a id="amapLink" href="#" class="map-btn">高德地图</a>
+          <a id="appleLink" href="#" class="map-btn" style="background:#000">苹果地图</a>
+        </div>
+        
     <% } else if (currentStatus === 'expired') { %>
         <div style="font-size:50px">⏳</div>
         <h2 style="margin:15px 0; color:#94a3b8">请求已失效</h2>
         <p style="color:#64748b; line-height: 1.6;">当前没有正在等待您的挪车请求<br>或请求已超过半小时失效。</p>
+        
     <% } else { %>
         <div style="font-size:50px">📣</div>
         <h2 style="margin:15px 0; color:#1e293b"><%= carTitle %></h2>
@@ -32,37 +40,56 @@
           <a id="appleLink" href="#" class="map-btn" style="background:#000">苹果地图</a>
         </div>
         <button id="confirmBtn" class="btn" onclick="confirmMove()">🚀 我已知晓，马上过去</button>
-        
-        <script>
-            const userKey = "<%= userKey %>";
-            window.onload = async () => {
-              const res = await fetch('/api/get-location?u=' + userKey);
-              const data = await res.json();
-              if(data.amapUrl) {
-                document.getElementById('mapArea').style.display = 'block';
-                document.getElementById('amapLink').href = data.amapUrl;
-                document.getElementById('appleLink').href = data.appleUrl;
-              }
-            };
-            async function confirmMove() {
-              const btn = document.getElementById('confirmBtn');
-              btn.innerText = '已告知对方 ✓'; btn.disabled = true; btn.style.background = '#94a3b8';
-              if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async p => {
-                  await fetch('/api/owner-confirm?u=' + userKey, { 
-                      method: 'POST', 
-                      headers: {'Content-Type': 'application/json'},
-                      body: JSON.stringify({ location: {lat: p.coords.latitude, lng: p.coords.longitude} }) 
-                  });
-                }, async () => {
-                  await fetch('/api/owner-confirm?u=' + userKey, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ location: null }) });
-                });
-              } else {
-                await fetch('/api/owner-confirm?u=' + userKey, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ location: null }) });
-              }
-            }
-        </script>
     <% } %>
   </div>
+
+  <script>
+      const userKey = "<%= userKey %>";
+      const currentStatus = "<%= currentStatus %>";
+
+      window.onload = async () => {
+        // 只要不是过期状态，就去服务器拉取一下扫码者的位置
+        if (currentStatus !== 'expired') {
+            try {
+                const res = await fetch('/api/get-location?u=' + userKey);
+                const data = await res.json();
+                
+                // 如果有位置数据，就显示地图模块
+                if(data.amapUrl) {
+                  const mapArea = document.getElementById('mapArea');
+                  if(mapArea) {
+                      mapArea.style.display = 'block';
+                      document.getElementById('amapLink').href = data.amapUrl;
+                      document.getElementById('appleLink').href = data.appleUrl;
+                  }
+                }
+            } catch (e) {
+                console.error("无法获取位置", e);
+            }
+        }
+      };
+
+      async function confirmMove() {
+        const btn = document.getElementById('confirmBtn');
+        if (!btn) return; // 安全检查
+
+        btn.innerText = '已告知对方 ✓'; btn.disabled = true; btn.style.background = '#94a3b8';
+        
+        // 尝试发送车主位置并确认
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(async p => {
+            await fetch('/api/owner-confirm?u=' + userKey, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ location: {lat: p.coords.latitude, lng: p.coords.longitude} }) 
+            });
+          }, async () => {
+            await fetch('/api/owner-confirm?u=' + userKey, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ location: null }) });
+          });
+        } else {
+          await fetch('/api/owner-confirm?u=' + userKey, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ location: null }) });
+        }
+      }
+  </script>
 </body>
 </html>
