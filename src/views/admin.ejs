@@ -6,18 +6,18 @@
     <title>MoveCar 控制台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .channel-group { @apply p-5 border border-slate-200 rounded-xl bg-slate-50/50 mb-5; }
-        .channel-title { @apply text-sm font-bold text-slate-700 mb-4 flex items-center; }
+        .channel-group { @apply p-5 border border-slate-200 rounded-xl bg-slate-50 mb-5 shadow-sm; }
+        .channel-title { @apply text-sm font-bold text-slate-800 mb-4 flex items-center; }
         
-        /* 🌟 核心优化：高辨识度的输入框样式 */
+        /* 🌟 核心修复：高对比度、纯白背景、明显边框的输入框 */
         .input-field { 
-            @apply w-full border border-slate-300 bg-slate-50 rounded-lg px-3 py-2.5 text-sm text-slate-800 shadow-sm 
-            focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 
-            outline-none transition-all duration-200 hover:border-slate-400 placeholder:text-slate-300; 
+            @apply w-full bg-white border border-slate-300 text-slate-900 rounded-lg px-3 py-2.5 text-sm shadow-sm 
+            focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none
+            hover:border-slate-400 transition-all placeholder:text-slate-400; 
         }
         
-        /* 优化的标签样式，增加间距让层级更清晰 */
-        .label-text { @apply block text-xs text-slate-500 mb-1.5 font-semibold tracking-wide; }
+        /* 标签文字加深，更加醒目 */
+        .label-text { @apply block text-xs text-slate-700 mb-1.5 font-bold tracking-wide; }
         
         /* 自定义滚动条 */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -25,12 +25,12 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-4 md:p-8">
+<body class="bg-slate-200 min-h-screen p-4 md:p-8">
     <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-8 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-8 bg-white p-5 rounded-2xl shadow-sm border border-slate-300">
             <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">🚗 MoveCar <span class="text-blue-600">Pro</span></h1>
             <div id="loginArea" class="flex space-x-2">
-                <input type="password" id="adminPwd" placeholder="管理密码..." class="border border-slate-300 bg-slate-50 rounded-lg px-4 py-2 text-sm shadow-sm focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all hover:border-slate-400">
+                <input type="password" id="adminPwd" placeholder="管理密码..." class="bg-white border border-slate-300 text-slate-900 rounded-lg px-4 py-2 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none hover:border-slate-400 transition-all">
                 <button onclick="login()" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-bold shadow hover:bg-blue-700 transition">登录</button>
             </div>
             <div id="userArea" class="hidden flex items-center space-x-4">
@@ -51,12 +51,12 @@
                 </div>
             <% } %>
 
-            <details class="bg-white rounded-xl shadow-sm border border-slate-200 group">
+            <details class="bg-white rounded-xl shadow-sm border border-slate-300 group">
                 <summary class="p-6 cursor-pointer font-bold text-lg text-slate-800 flex justify-between items-center outline-none">
-                    <div class="flex items-center">⚙️ 系统全局设置 <span class="ml-3 text-xs font-normal bg-slate-100 text-slate-500 px-2 py-1 rounded">域名 / 邮件 SMTP / 公共Token</span></div>
+                    <div class="flex items-center">⚙️ 系统全局设置 <span class="ml-3 text-xs font-normal bg-slate-100 text-slate-500 px-2 py-1 rounded border border-slate-200">域名 / 邮件 SMTP / 公共Token</span></div>
                     <span class="text-slate-400 group-open:rotate-180 transition-transform duration-300">▼</span>
                 </summary>
-                <div class="p-6 border-t border-slate-100 bg-slate-50/50">
+                <div class="p-6 border-t border-slate-200 bg-slate-50/80">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-4">
                             <div>
@@ -72,10 +72,10 @@
                                 <input type="text" id="sys_tgBot" value="<%= sys.tgBotToken || '' %>" placeholder="123456:ABC-DEF..." class="input-field">
                             </div>
                         </div>
-                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                            <h4 class="text-sm font-bold text-slate-700 mb-4 flex justify-between items-center">
+                        <div class="bg-white p-5 rounded-xl border border-slate-300 shadow-sm">
+                            <h4 class="text-sm font-bold text-slate-800 mb-4 flex justify-between items-center">
                                 📧 发件邮箱 SMTP 配置
-                                <span class="text-xs text-slate-400 font-normal bg-slate-100 px-2 py-1 rounded">支持 QQ/Gmail/阿里云 等</span>
+                                <span class="text-xs text-slate-500 font-normal bg-slate-100 px-2 py-1 rounded border border-slate-200">支持 QQ/Gmail/阿里云 等</span>
                             </h4>
                             <div class="grid grid-cols-2 gap-4 mb-4">
                                 <div><label class="label-text">SMTP 服务器地址</label><input type="text" id="sys_smtpHost" value="<%= sys.smtpHost || '' %>" placeholder="smtp.qq.com" class="input-field"></div>
@@ -93,15 +93,15 @@
             </details>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-slate-200 transition-all" id="formCard">
-                    <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+                <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-slate-300 transition-all" id="formCard">
+                    <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-200">
                         <h2 class="text-lg font-bold text-slate-800" id="formTitle">✨ 添加车主通道</h2>
-                        <button onclick="resetForm()" class="text-xs font-bold text-slate-500 hover:text-blue-600 hidden bg-slate-100 hover:bg-blue-50 px-3 py-1.5 rounded transition" id="cancelEditBtn">取消编辑</button>
+                        <button onclick="resetForm()" class="text-xs font-bold text-slate-500 hover:text-blue-600 hidden bg-slate-100 hover:bg-blue-50 px-3 py-1.5 rounded transition border border-slate-200" id="cancelEditBtn">取消编辑</button>
                     </div>
                     
                     <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                         <div class="grid grid-cols-2 gap-4">
-                            <div><label class="label-text"><span class="text-red-500">*</span> 唯一标识 (u参数)</label><input type="text" id="ipt_userKey" placeholder="如 user1" class="input-field border-blue-200 bg-blue-50/30"></div>
+                            <div><label class="label-text"><span class="text-red-500">*</span> 唯一标识 (u参数)</label><input type="text" id="ipt_userKey" placeholder="如 user1" class="input-field"></div>
                             <div><label class="label-text">车牌/称呼</label><input type="text" id="ipt_carTitle" placeholder="如 李四" class="input-field"></div>
                         </div>
                         
@@ -118,28 +118,28 @@
                             <div class="channel-title text-indigo-600">💼 办公与极客通道</div>
                             <div class="space-y-4">
                                 <div><label class="label-text">苹果 Bark URL</label><input type="text" id="ipt_barkUrl" placeholder="https://api.day.app/xxx" class="input-field"></div>
-                                <div><label class="label-text">接收通知邮箱 (需配好全局SMTP)</label><input type="text" id="ipt_email" placeholder="example@qq.com" class="input-field"></div>
+                                <div><label class="label-text">接收通知邮箱 (需配好SMTP)</label><input type="text" id="ipt_email" placeholder="example@qq.com" class="input-field"></div>
                                 <div><label class="label-text">Telegram Chat ID</label><input type="text" id="ipt_tgChatId" placeholder="纯数字 ID" class="input-field"></div>
-                                <div><label class="label-text">企业微信 Webhook</label><input type="text" id="ipt_wecomUrl" class="input-field"></div>
-                                <div><label class="label-text">钉钉 Webhook</label><input type="text" id="ipt_dingtalkUrl" class="input-field"></div>
+                                <div><label class="label-text">企业微信 Webhook</label><input type="text" id="ipt_wecomUrl" placeholder="https://qyapi.weixin.qq.com/..." class="input-field"></div>
+                                <div><label class="label-text">钉钉 Webhook</label><input type="text" id="ipt_dingtalkUrl" placeholder="https://oapi.dingtalk.com/..." class="input-field"></div>
                             </div>
                         </div>
                     </div>
                     <button onclick="saveUser()" id="saveUserBtn" class="mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition w-full shadow-md">保存车主配置</button>
                 </div>
 
-                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                    <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-300 overflow-hidden flex flex-col">
+                    <div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
                         <h2 class="font-bold text-slate-800">📋 动态车主列表</h2>
-                        <button onclick="loadData()" class="text-sm text-blue-600 font-medium hover:underline flex items-center"><span class="mr-1">🔄</span> 刷新列表</button>
+                        <button onclick="loadData()" class="text-sm text-blue-600 font-bold hover:underline flex items-center"><span class="mr-1">🔄</span> 刷新列表</button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-slate-200">
                             <thead class="bg-white">
                                 <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">呼叫链接</th>
-                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">已配通道</th>
-                                    <th class="px-6 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">操作</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">呼叫链接</th>
+                                    <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">已配通道</th>
+                                    <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">操作</th>
                                 </tr>
                             </thead>
                             <tbody id="userTableBody" class="divide-y divide-slate-100 bg-white"></tbody>
@@ -208,24 +208,24 @@
             users.forEach(u => {
                 const fullUrl = currentDomain ? `${currentDomain}/?u=${u.userKey}` : '';
                 const urlHtml = currentDomain 
-                    ? `<div class="font-bold text-slate-800 mb-1">${u.carTitle || u.userKey}</div><div class="flex items-center space-x-2"><a href="${fullUrl}" target="_blank" class="text-blue-500 hover:underline text-xs truncate max-w-[200px]">${fullUrl}</a><button onclick="copyToClipboard('${fullUrl}', this)" class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] px-2 py-1 rounded border border-slate-200 transition">复制</button></div>`
-                    : `<div class="font-bold text-slate-800 mb-1">${u.carTitle || u.userKey}</div><span class="text-red-500 text-xs bg-red-50 px-2 py-1 rounded">未配域名，链接不可用</span>`;
+                    ? `<div class="font-bold text-slate-800 mb-1">${u.carTitle || u.userKey}</div><div class="flex items-center space-x-2"><a href="${fullUrl}" target="_blank" class="text-blue-600 hover:underline text-xs truncate max-w-[200px]">${fullUrl}</a><button onclick="copyToClipboard('${fullUrl}', this)" class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] px-2 py-1 rounded border border-slate-300 transition shadow-sm">复制</button></div>`
+                    : `<div class="font-bold text-slate-800 mb-1">${u.carTitle || u.userKey}</div><span class="text-red-500 text-xs bg-red-50 px-2 py-1 rounded border border-red-200">未配域名，链接不可用</span>`;
 
                 // 统计已配置的通道
                 let tags = [];
                 if(u.wxpusherUid) tags.push('WxPusher'); if(u.pushplusToken) tags.push('PushPlus'); if(u.serverChanKey) tags.push('Server酱');
                 if(u.barkUrl) tags.push('Bark'); if(u.email) tags.push('Email'); if(u.tgChatId) tags.push('TG');
                 if(u.wecomUrl) tags.push('企微'); if(u.dingtalkUrl) tags.push('钉钉');
-                const tagHtml = tags.length > 0 ? tags.map(t => `<span class="bg-slate-50 text-slate-600 text-[11px] font-medium px-2 py-1 rounded-md mr-1.5 mb-1.5 inline-block border border-slate-200">${t}</span>`).join('') : '<span class="text-slate-400 text-xs italic">暂无推送配置</span>';
+                const tagHtml = tags.length > 0 ? tags.map(t => `<span class="bg-blue-50 text-blue-700 text-[11px] font-bold px-2 py-1 rounded-md mr-1.5 mb-1.5 inline-block border border-blue-200 shadow-sm">${t}</span>`).join('') : '<span class="text-slate-400 text-xs italic">暂无推送配置</span>';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap">${urlHtml}</td>
                     <td class="px-6 py-4 max-w-[250px] flex-wrap">${tagHtml}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onclick="editUser('${u.userKey}')" class="text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1.5 rounded-lg mr-2 transition font-bold">编辑</button>
-                        <a href="${currentDomain ? currentDomain+'/qr?u='+u.userKey : '#'}" target="_blank" class="text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-lg mr-2 transition font-bold ${!currentDomain ? 'hidden' : ''}">二维码</a>
-                        <button onclick="deleteUser('${u.userKey}')" class="text-red-500 hover:text-red-700 bg-red-50 px-3 py-1.5 rounded-lg transition font-bold">删除</button>
+                        <button onclick="editUser('${u.userKey}')" class="text-blue-600 hover:text-blue-800 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg mr-2 transition font-bold shadow-sm">编辑</button>
+                        <a href="${currentDomain ? currentDomain+'/qr?u='+u.userKey : '#'}" target="_blank" class="text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg mr-2 transition font-bold shadow-sm ${!currentDomain ? 'hidden' : ''}">二维码</a>
+                        <button onclick="deleteUser('${u.userKey}')" class="text-red-600 hover:text-red-800 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg transition font-bold shadow-sm">删除</button>
                     </td>`;
                 tbody.appendChild(tr);
             });
@@ -239,8 +239,7 @@
             
             const iptKey = document.getElementById('ipt_userKey'); 
             iptKey.readOnly = true; 
-            iptKey.classList.add('bg-slate-100', 'text-slate-400', 'cursor-not-allowed', 'border-slate-200');
-            iptKey.classList.remove('border-blue-200', 'bg-blue-50/30');
+            iptKey.classList.add('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
 
             document.getElementById('formTitle').innerHTML = `✏️ 编辑车主：<span class="text-blue-600">${key}</span>`;
             document.getElementById('saveUserBtn').innerText = '💾 更新车主配置'; 
@@ -253,8 +252,7 @@
             
             const iptKey = document.getElementById('ipt_userKey'); 
             iptKey.readOnly = false; 
-            iptKey.classList.remove('bg-slate-100', 'text-slate-400', 'cursor-not-allowed', 'border-slate-200');
-            iptKey.classList.add('border-blue-200', 'bg-blue-50/30');
+            iptKey.classList.remove('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
 
             document.getElementById('formTitle').innerText = '✨ 添加车主通道';
             document.getElementById('saveUserBtn').innerText = '保存车主配置'; 
@@ -282,10 +280,10 @@
                 await navigator.clipboard.writeText(text); 
                 const old = btn.innerText; 
                 btn.innerText = '已复制'; 
-                btn.classList.add('bg-green-100', 'text-green-700', 'border-green-200');
+                btn.classList.add('bg-green-100', 'text-green-700', 'border-green-300');
                 setTimeout(() => {
                     btn.innerText = old;
-                    btn.classList.remove('bg-green-100', 'text-green-700', 'border-green-200');
+                    btn.classList.remove('bg-green-100', 'text-green-700', 'border-green-300');
                 }, 1500); 
             } catch(e){}
         }
