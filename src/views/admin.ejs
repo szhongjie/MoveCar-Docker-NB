@@ -9,7 +9,6 @@
         .channel-group { @apply p-5 border border-slate-200 rounded-xl bg-white mb-5 shadow-sm; }
         .channel-title { @apply text-sm font-bold text-slate-800 mb-4 flex items-center; }
         
-        /* 🌟 极致辨识度：常态下自带灰底色和内阴影，点击后变白发光 */
         .input-field { 
             @apply w-full bg-slate-100 border border-slate-300 text-slate-900 rounded-lg px-3 py-2.5 text-sm shadow-inner font-medium
             focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus:shadow-md
@@ -18,7 +17,6 @@
         
         .label-text { @apply block text-xs text-slate-700 mb-2 font-bold tracking-wide; }
         
-        /* 自定义滚动条加深颜色 */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 20px; }
@@ -116,16 +114,20 @@
                             </div>
                             
                             <div class="space-y-4 max-h-[500px] xl:max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
+                                
                                 <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4 mb-5">
                                     <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 mb-3">👤 基础信息</h3>
-                                    <div><label class="label-text"><span class="text-red-500">*</span> 唯一标识 (拼音/英文，如 user1)</label><input type="text" id="ipt_userKey" placeholder="点击输入..." class="input-field"></div>
-                                    <div><label class="label-text">车牌号或称呼</label><input type="text" id="ipt_carTitle" placeholder="点击输入..." class="input-field"></div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div><label class="label-text"><span class="text-red-500">*</span> 唯一标识 (u参数)</label><input type="text" id="ipt_userKey" placeholder="点击输入..." class="input-field"></div>
+                                        <div><label class="label-text">车牌号或称呼</label><input type="text" id="ipt_carTitle" placeholder="点击输入..." class="input-field"></div>
+                                    </div>
+                                    <div><label class="label-text">车主手机号 (填后主页显示拨打按钮)</label><input type="text" id="ipt_phone" placeholder="选填，如 13800138000" class="input-field"></div>
                                 </div>
                                 
                                 <div class="channel-group">
                                     <div class="channel-title text-green-600">💬 微信生态通道</div>
                                     <div class="space-y-4">
-                                        <div><label class="label-text">WxPusher UID (强烈推荐)</label><input type="text" id="ipt_wxpusherUid" placeholder="UID_xxxxx" class="input-field"></div>
+                                        <div><label class="label-text">WxPusher UID (推荐)</label><input type="text" id="ipt_wxpusherUid" placeholder="UID_xxxxx" class="input-field"></div>
                                         <div><label class="label-text">PushPlus Token</label><input type="text" id="ipt_pushplusToken" placeholder="点击输入 Token" class="input-field"></div>
                                         <div><label class="label-text">Server酱 SendKey</label><input type="text" id="ipt_serverChanKey" placeholder="点击输入 SendKey" class="input-field"></div>
                                     </div>
@@ -157,7 +159,7 @@
                                     <thead class="bg-white">
                                         <tr>
                                             <th class="px-4 sm:px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">呼叫链接</th>
-                                            <th class="px-4 sm:px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">已配通道</th>
+                                            <th class="px-4 sm:px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">配置详情</th>
                                             <th class="px-4 sm:px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">操作</th>
                                         </tr>
                                     </thead>
@@ -321,6 +323,8 @@
                     : `<div class="font-bold text-slate-800 mb-1.5">${u.carTitle || u.userKey}</div><span class="text-red-500 text-xs font-bold bg-red-50 px-2 py-1 rounded border border-red-200 shadow-sm">未配域名，链接不可用</span>`;
 
                 let tags = [];
+                // 🌟 在表格里也展示手机号标志
+                if(u.phone) tags.push('📞 手机号');
                 if(u.wxpusherUid) tags.push('WxPusher'); if(u.pushplusToken) tags.push('PushPlus'); if(u.serverChanKey) tags.push('Server酱');
                 if(u.barkUrl) tags.push('Bark'); if(u.email) tags.push('Email'); if(u.tgChatId) tags.push('TG');
                 if(u.wecomUrl) tags.push('企微'); if(u.dingtalkUrl) tags.push('钉钉');
@@ -342,7 +346,8 @@
             });
         }
 
-        const fields = ['userKey','carTitle','pushplusToken','barkUrl','wxpusherUid','serverChanKey','tgChatId','email','wecomUrl','dingtalkUrl'];
+        // 🌟 将 phone 字段重新加回解析数组
+        const fields = ['userKey','carTitle','phone','pushplusToken','barkUrl','wxpusherUid','serverChanKey','tgChatId','email','wecomUrl','dingtalkUrl'];
         
         function editUser(key) {
             const user = usersDataCache.find(u => u.userKey === key); if(!user) return;
