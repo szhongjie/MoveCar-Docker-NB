@@ -10,12 +10,10 @@
     <div class="max-w-5xl mx-auto">
         <div class="flex justify-between items-center mb-8">
             <h1 class="text-3xl font-bold text-gray-800">🚗 MoveCar 管理后台</h1>
-            
             <div id="loginArea" class="flex space-x-2">
                 <input type="password" id="adminPwd" placeholder="输入管理密码..." class="border rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                 <button onclick="login()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition">登录</button>
             </div>
-
             <div id="userArea" class="hidden flex items-center space-x-4">
                 <span class="text-sm text-green-600 font-bold bg-green-100 px-3 py-1 rounded-full">✅ 验证通过</span>
                 <button onclick="loadData()" class="text-gray-500 hover:text-blue-600 transition" title="刷新数据">🔄 刷新</button>
@@ -28,31 +26,36 @@
                 <h2 class="text-lg font-semibold mb-3 text-gray-800">⚙️ 系统全局设置</h2>
                 <div class="flex flex-col md:flex-row md:items-center space-y-3 md:space-y-0 md:space-x-4">
                     <div class="flex-1">
-                        <label class="block text-sm text-gray-600 mb-1">外网访问主域名 (须带 https://)</label>
-                        <input type="text" id="iptDomain" value="<%= domain %>" placeholder="例如: https://car.bibb.cf" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-100 outline-none">
+                        <label class="block text-sm text-gray-600 mb-1">
+                            外网访问主域名 
+                            <span class="text-red-500 text-xs ml-2 font-normal">⚠️ 必须配置 https:// 协议，否则系统无法获取访客 GPS 定位</span>
+                        </label>
+                        <input type="text" id="iptDomain" value="<%= domain %>" placeholder="例如: https://car.xxxxx.com" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-100 outline-none">
                     </div>
                     <button onclick="saveDomain()" class="bg-gray-800 text-white px-6 py-2 rounded font-medium hover:bg-black transition h-[42px] mt-auto">保存域名</button>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">保存后，下方生成的二维码链接和系统通知链接将全部自动应用新域名。</p>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
-                <h2 class="text-lg font-semibold mb-4 text-gray-700">✨ 添加 / 修改车主</h2>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8 transition-all" id="formCard">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-700" id="formTitle">✨ 添加车主</h2>
+                    <button onclick="resetForm()" class="text-sm text-gray-500 hover:text-blue-600 hidden" id="cancelEditBtn">取消编辑并清空</button>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <input type="text" id="iptKey" placeholder="唯一标识 (如 user1)" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-100 outline-none">
+                    <input type="text" id="iptKey" placeholder="唯一标识 (如 user1)" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-100 outline-none transition-colors">
                     <input type="text" id="iptTitle" placeholder="车牌/称呼 (如 李四)" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-100 outline-none">
                     <input type="text" id="iptPush" placeholder="PushPlus Token (选填)" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-100 outline-none">
                     <input type="text" id="iptBark" placeholder="Bark URL (选填)" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-100 outline-none">
                     <input type="text" id="iptPhone" placeholder="手机号 (选填)" class="border rounded px-3 py-2 focus:ring-2 focus:ring-blue-100 outline-none">
                 </div>
-                <button onclick="saveUser()" class="mt-4 bg-green-500 text-white px-6 py-2 rounded font-medium hover:bg-green-600 transition w-full md:w-auto shadow-sm">保存车主配置 (即刻生效)</button>
+                <button onclick="saveUser()" id="saveUserBtn" class="mt-4 bg-green-500 text-white px-6 py-2 rounded font-medium hover:bg-green-600 transition w-full md:w-auto shadow-sm">保存车主配置</button>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">完整呼叫链接 (可直接发人扫)</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">完整呼叫链接</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">车牌/称呼</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">推送配置</th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
@@ -72,6 +75,7 @@
     <script>
         let currentDomain = "<%= domain %>";
         let currentToken = localStorage.getItem('movecar_admin_token') || '';
+        let usersDataCache = []; // 缓存用户数据用于编辑
 
         window.onload = () => {
             if (currentToken) {
@@ -114,13 +118,11 @@
                 document.getElementById('userArea').classList.remove('hidden');
                 document.getElementById('mainContent').classList.remove('hidden');
                 
-                renderTable(result.data);
-            } catch (e) {
-                alert('网络错误');
-            }
+                usersDataCache = result.data; // 写入缓存
+                renderTable(usersDataCache);
+            } catch (e) { alert('网络错误'); }
         }
 
-        // 异步保存域名
         async function saveDomain() {
             const domainVal = document.getElementById('iptDomain').value.trim();
             if(!domainVal.startsWith('http')) return alert('域名必须以 http:// 或 https:// 开头');
@@ -132,12 +134,10 @@
             });
             const data = await res.json();
             if(data.success) {
-                currentDomain = domainVal.replace(/\/$/, ""); // 更新前端本地的域名变量
-                alert('✅ 域名修改成功，所有链接已更新！');
-                loadData(); // 重新渲染表格，刷新链接
-            } else {
-                alert(data.error);
-            }
+                currentDomain = domainVal.replace(/\/$/, "");
+                alert('✅ 域名修改成功！');
+                loadData();
+            } else { alert(data.error); }
         }
 
         function renderTable(users) {
@@ -155,16 +155,17 @@
                 tr.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <div class="flex items-center space-x-2">
-                            <a href="${fullUrl}" target="_blank" class="text-blue-600 hover:underline font-medium">${fullUrl}</a>
+                            <a href="${fullUrl}" target="_blank" class="text-blue-600 hover:underline font-medium truncate max-w-[200px] inline-block">${fullUrl}</a>
                             <button onclick="copyToClipboard('${fullUrl}', this)" class="bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded border transition">📄 复制</button>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${u.carTitle || '-'}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 space-y-1">
-                        ${u.pushplusToken ? '<div class="bg-green-50 text-green-700 text-xs px-2 py-1 rounded border border-green-200 inline-block mr-1">微信已配</div>' : ''}
-                        ${u.barkUrl ? '<div class="bg-yellow-50 text-yellow-700 text-xs px-2 py-1 rounded border border-yellow-200 inline-block mr-1">苹果已配</div>' : ''}
+                        ${u.pushplusToken ? '<div class="bg-green-50 text-green-700 text-xs px-2 py-1 rounded border border-green-200 inline-block mr-1">微信</div>' : ''}
+                        ${u.barkUrl ? '<div class="bg-yellow-50 text-yellow-700 text-xs px-2 py-1 rounded border border-yellow-200 inline-block mr-1">苹果</div>' : ''}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onclick="editUser('${u.userKey}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1.5 rounded mr-2 transition">✏️ 编辑</button>
                         <a href="${currentDomain}/qr?u=${u.userKey}" target="_blank" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1.5 rounded mr-2 transition">🖨️ 挪车码</a>
                         <button onclick="deleteUser('${u.userKey}')" class="text-red-600 hover:text-red-800 bg-red-50 px-3 py-1.5 rounded transition">删除</button>
                     </td>
@@ -173,19 +174,48 @@
             });
         }
 
-        async function copyToClipboard(text, btnElement) {
-            try {
-                await navigator.clipboard.writeText(text);
-                const originalHtml = btnElement.innerHTML;
-                btnElement.innerHTML = '✅ 已复制';
-                btnElement.classList.replace('text-gray-600', 'text-green-600');
-                btnElement.classList.replace('bg-gray-100', 'bg-green-50');
-                setTimeout(() => {
-                    btnElement.innerHTML = originalHtml;
-                    btnElement.classList.replace('text-green-600', 'text-gray-600');
-                    btnElement.classList.replace('bg-green-50', 'bg-gray-100');
-                }, 1500);
-            } catch (err) { alert('复制失败，请手动复制'); }
+        // 触发编辑模式
+        function editUser(key) {
+            const user = usersDataCache.find(u => u.userKey === key);
+            if(!user) return;
+            
+            // 锁定 Key 的修改
+            const iptKey = document.getElementById('iptKey');
+            iptKey.value = user.userKey;
+            iptKey.readOnly = true;
+            iptKey.classList.add('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
+
+            document.getElementById('iptTitle').value = user.carTitle || '';
+            document.getElementById('iptPush').value = user.pushplusToken || '';
+            document.getElementById('iptBark').value = user.barkUrl || '';
+            document.getElementById('iptPhone').value = user.phone || '';
+
+            // UI 状态切换
+            document.getElementById('formTitle').innerHTML = `✏️ 正在编辑：<span class="text-blue-600">${key}</span>`;
+            document.getElementById('saveUserBtn').innerHTML = '💾 更新车主信息';
+            document.getElementById('saveUserBtn').classList.replace('bg-green-500', 'bg-blue-600');
+            document.getElementById('saveUserBtn').classList.replace('hover:bg-green-600', 'hover:bg-blue-700');
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            document.getElementById('formCard').classList.add('ring-2', 'ring-blue-100', 'bg-blue-50/30');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 取消编辑并重置表单
+        function resetForm() {
+            const iptKey = document.getElementById('iptKey');
+            iptKey.readOnly = false;
+            iptKey.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
+            
+            ['iptKey','iptTitle','iptPush','iptBark','iptPhone'].forEach(id => document.getElementById(id).value = '');
+            
+            document.getElementById('formTitle').innerHTML = '✨ 添加车主';
+            const saveBtn = document.getElementById('saveUserBtn');
+            saveBtn.innerHTML = '保存车主配置';
+            saveBtn.classList.replace('bg-blue-600', 'bg-green-500');
+            saveBtn.classList.replace('hover:bg-blue-700', 'hover:bg-green-600');
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+            document.getElementById('formCard').classList.remove('ring-2', 'ring-blue-100', 'bg-blue-50/30');
         }
 
         async function saveUser() {
@@ -206,8 +236,8 @@
             });
             const data = await res.json();
             if(data.success) {
+                resetForm(); // 保存成功后恢复为添加模式
                 loadData();
-                ['iptKey','iptTitle','iptPush','iptBark','iptPhone'].forEach(id => document.getElementById(id).value = '');
             } else { alert(data.error); }
         }
 
@@ -217,6 +247,21 @@
             const res = await fetch(`/admin/api/users/${key}?token=${currentToken}`, { method: 'DELETE' });
             const data = await res.json();
             if(data.success) loadData();
+        }
+
+        async function copyToClipboard(text, btnElement) {
+            try {
+                await navigator.clipboard.writeText(text);
+                const originalHtml = btnElement.innerHTML;
+                btnElement.innerHTML = '✅ 已复制';
+                btnElement.classList.replace('text-gray-600', 'text-green-600');
+                btnElement.classList.replace('bg-gray-100', 'bg-green-50');
+                setTimeout(() => {
+                    btnElement.innerHTML = originalHtml;
+                    btnElement.classList.replace('text-green-600', 'text-gray-600');
+                    btnElement.classList.replace('bg-green-50', 'bg-gray-100');
+                }, 1500);
+            } catch (err) { alert('复制失败，请手动复制'); }
         }
     </script>
 </body>

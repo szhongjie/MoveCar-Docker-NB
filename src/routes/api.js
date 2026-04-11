@@ -4,6 +4,7 @@ const router = express.Router();
 const redisClient = require('../utils/redis');
 const { CONFIG, getUserConfig, getBaseDomain } = require('../utils/config');
 const { generateMapUrls } = require('../utils/geo');
+const Notifier = require('../services/notifier'); // 【新增】引入推送服务
 
 // 1. 发送通知 API
 router.post('/notify', async (req, res) => {
@@ -19,44 +20,34 @@ router.post('/notify', async (req, res) => {
         const body = req.body;
         const sessionId = body.sessionId; 
         
-        // 【变动部分】使用 await 一次性获取配置
+        // 获取车主配置与域名
         const config = await getUserConfig(userKey);
         const ppToken = config.pushplusToken;
         const barkUrl = config.barkUrl;
-        const carTitle = config.carTitle;
+        const carTitle = config.carTitle || '车主';
         
-        const confirmUrl = getBaseDomain(req) + "/owner-confirm?u=" + userKey;
-        let notifyText = "🚗 挪车请求【" + carTitle + "】\n💬 留言: " + (body.message || '车旁有人等待');
+        const domain = await getBaseDomain(req);
+        const confirmUrl = `${domain}/owner-confirm?u=${userKey}`;
+
+        // 统一构造推送的标题和内容 (修复了以前的换行符错误)
+        const notifyTitle = `🚗 挪车请求：${carTitle}`;
+        const notifyContent = `💬 留言内容：${body.message || '车旁有人等待，请速来挪车。'}`;
         
+        // Redis 状态存储
         const statusData = { status: 'waiting', sessionId: sessionId };
-        
         if (body.location && body.location.lat) {
             const maps = generateMapUrls(body.location.lat, body.location.lng);
             await redisClient.set("movecar:loc:" + userKey, JSON.stringify({ ...body.location, ...maps }), { EX: CONFIG.KV_TTL });
         }
-
         await redisClient.set("movecar:status:" + userKey, JSON.stringify(statusData), { EX: CONFIG.SESSION_TTL });
         await redisClient.set(lockKey, '1', { EX: CONFIG.RATE_LIMIT_TTL });
 
+        // 🌟 触发多通道推送 (策略模式调度)
         const tasks = [];
-        if (ppToken) {
-            tasks.push(fetch('http://www.pushplus.plus/send', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-                    token: ppToken, 
-                    title: "🚗 挪车请求：" + carTitle, 
-                    content: notifyText.replace(/\n/g, '<br>') + '<br><br><a href="' + confirmUrl + '" style="font-size:18px;color:#0093E9">【点击处理】</a>', 
-                    template: 'html' 
-                }) 
-            }).catch(e => console.error('PushPlus error', e)));
-        }
-        
-        if (barkUrl) {
-            tasks.push(fetch(barkUrl + "/" + encodeURIComponent('挪车请求') + "/" + encodeURIComponent(notifyText) + "?url=" + encodeURIComponent(confirmUrl))
-            .catch(e => console.error('Bark error', e)));
-        }
+        if (ppToken) tasks.push(Notifier.sendPushPlus(ppToken, notifyTitle, notifyContent, confirmUrl));
+        if (barkUrl) tasks.push(Notifier.sendBark(barkUrl, notifyTitle, notifyContent, confirmUrl));
 
+        // 不阻塞直接返回，让通知在后台慢慢发
         Promise.all(tasks); 
         return res.json({ success: true });
 
@@ -65,7 +56,6 @@ router.post('/notify', async (req, res) => {
         return res.status(500).json({ success: false, error: '服务器内部错误' });
     }
 });
-
 // 2. 查询状态 API
 router.get('/check-status', async (req, res) => {
     const userKey = (req.query.u || 'default').toLowerCase();
