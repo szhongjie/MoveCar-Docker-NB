@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>挪车处理</title>
+  <style>
+    body { font-family: sans-serif; background: #4f46e5; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin:0; padding:20px; }
+    .card { background: white; padding: 35px 25px; border-radius: 30px; text-align: center; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+    .btn { background: #10b981; color: white; border: none; width: 100%; padding: 20px; border-radius: 18px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
+    .map-box { display: none; background: #f8fafc; padding: 20px; border-radius: 20px; margin-top: 15px; border: 1px solid #e2e8f0; }
+    .map-btn { display: inline-block; padding: 12px 18px; background: #2563eb; color: white; text-decoration: none; border-radius: 12px; margin: 5px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div style="font-size:50px">📣</div>
+    <h2 style="margin:15px 0; color:#1e293b"><%= carTitle %></h2>
+    <p style="color:#64748b">有人正在车旁等您，请确认：</p>
+    <div id="mapArea" class="map-box">
+      <p style="font-size:14px; color:#2563eb; margin-bottom:12px; font-weight:bold">对方实时位置 📍</p>
+      <a id="amapLink" href="#" class="map-btn">高德地图</a>
+      <a id="appleLink" href="#" class="map-btn" style="background:#000">苹果地图</a>
+    </div>
+    <button id="confirmBtn" class="btn" onclick="confirmMove()">🚀 我已知晓，马上过去</button>
+  </div>
+  <script>
+    const userKey = "<%= userKey %>";
+    window.onload = async () => {
+      const res = await fetch('/api/get-location?u=' + userKey);
+      const data = await res.json();
+      if(data.amapUrl) {
+        document.getElementById('mapArea').style.display = 'block';
+        document.getElementById('amapLink').href = data.amapUrl;
+        document.getElementById('appleLink').href = data.appleUrl;
+      }
+    };
+    async function confirmMove() {
+      const btn = document.getElementById('confirmBtn');
+      btn.innerText = '已告知对方 ✓'; btn.disabled = true; btn.style.background = '#94a3b8';
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async p => {
+          await fetch('/api/owner-confirm?u=' + userKey, { 
+              method: 'POST', 
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ location: {lat: p.coords.latitude, lng: p.coords.longitude} }) 
+          });
+        }, async () => {
+          await fetch('/api/owner-confirm?u=' + userKey, { 
+              method: 'POST', 
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ location: null }) 
+          });
+        });
+      }
+    }
+  </script>
+</body>
+</html>
