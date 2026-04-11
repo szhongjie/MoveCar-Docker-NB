@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoveCar 控制台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">🚗 MoveCar 管理后台</h1>
+            <div class="flex space-x-2">
+                <input type="password" id="adminPwd" placeholder="输入管理密码..." class="border rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                <button onclick="loadUsers()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition">登录 / 刷新</button>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+            <h2 class="text-lg font-semibold mb-4 text-gray-700">✨ 添加 / 修改车主</h2>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <input type="text" id="iptKey" placeholder="唯一标识 (如 user3)" class="border rounded px-3 py-2">
+                <input type="text" id="iptTitle" placeholder="车主称呼 (如 李四)" class="border rounded px-3 py-2">
+                <input type="text" id="iptPush" placeholder="PushPlus Token (选填)" class="border rounded px-3 py-2">
+                <input type="text" id="iptBark" placeholder="Bark URL (选填)" class="border rounded px-3 py-2">
+                <input type="text" id="iptPhone" placeholder="手机号 (选填)" class="border rounded px-3 py-2">
+            </div>
+            <button onclick="saveUser()" class="mt-4 bg-green-500 text-white px-6 py-2 rounded font-medium hover:bg-green-600 transition w-full md:w-auto">保存车主配置 (热更新)</button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">标识码 (u参数)</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">车牌/称呼</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">推送通道状态</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody" class="bg-white divide-y divide-gray-200">
+                    <tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">请先输入密码并点击登录</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const domain = "<%= domain %>";
+
+        async function loadUsers() {
+            const pwd = document.getElementById('adminPwd').value;
+            if(!pwd) return alert('请输入密码');
+
+            try {
+                const res = await fetch(`/admin/api/users?token=${pwd}`);
+                const result = await res.json();
+                
+                if(!result.success) return alert(result.error);
+                
+                renderTable(result.data);
+            } catch (e) {
+                alert('网络错误');
+            }
+        }
+
+        function renderTable(users) {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+            
+            if(users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">暂无动态车主，您目前使用的是环境变量里的静态配置</td></tr>';
+                return;
+            }
+
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">?u=${u.userKey}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${u.carTitle || '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${u.pushplusToken ? '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">PushPlus 已配</span>' : ''}
+                        ${u.barkUrl ? '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Bark 已配</span>' : ''}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="${domain}/qr?u=${u.userKey}" target="_blank" class="text-indigo-600 hover:text-indigo-900 mr-3">🖨️ 挪车码</a>
+                        <button onclick="deleteUser('${u.userKey}')" class="text-red-600 hover:text-red-900">删除</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function saveUser() {
+            const pwd = document.getElementById('adminPwd').value;
+            if(!pwd) return alert('请输入密码');
+
+            const payload = {
+                userKey: document.getElementById('iptKey').value.trim(),
+                carTitle: document.getElementById('iptTitle').value.trim(),
+                pushplusToken: document.getElementById('iptPush').value.trim(),
+                barkUrl: document.getElementById('iptBark').value.trim(),
+                phone: document.getElementById('iptPhone').value.trim()
+            };
+
+            const res = await fetch(`/admin/api/users?token=${pwd}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if(data.success) {
+                alert('添加/修改成功！');
+                loadUsers(); // 刷新列表
+                // 清空表单
+                ['iptKey','iptTitle','iptPush','iptBark','iptPhone'].forEach(id => document.getElementById(id).value = '');
+            } else {
+                alert(data.error);
+            }
+        }
+
+        async function deleteUser(key) {
+            const pwd = document.getElementById('adminPwd').value;
+            if(!confirm(`确定要删除配置 [${key}] 吗？`)) return;
+
+            const res = await fetch(`/admin/api/users/${key}?token=${pwd}`, { method: 'DELETE' });
+            const data = await res.json();
+            if(data.success) loadUsers();
+        }
+    </script>
+</body>
+</html>

@@ -18,11 +18,14 @@ router.post('/notify', async (req, res) => {
 
         const body = req.body;
         const sessionId = body.sessionId; 
-        const ppToken = getUserConfig(userKey, 'PUSHPLUS_TOKEN');
-        const barkUrl = getUserConfig(userKey, 'BARK_URL');
-        const carTitle = getUserConfig(userKey, 'CAR_TITLE') || '车主';
+        
+        // 【变动部分】使用 await 一次性获取配置
+        const config = await getUserConfig(userKey);
+        const ppToken = config.pushplusToken;
+        const barkUrl = config.barkUrl;
+        const carTitle = config.carTitle;
+        
         const confirmUrl = getBaseDomain(req) + "/owner-confirm?u=" + userKey;
-
         let notifyText = "🚗 挪车请求【" + carTitle + "】\n💬 留言: " + (body.message || '车旁有人等待');
         
         const statusData = { status: 'waiting', sessionId: sessionId };

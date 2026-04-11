@@ -24,6 +24,7 @@ services:
       - NODE_ENV=production
       - PORT=3000 # 明确告诉程序在容器内部监听 3000 端口
       - REDIS_URL=redis://movecar-redis:6379 # 内部连接 Redis 的专属通道
+      - ADMIN_PASSWORD=ckz2396668615 # 如果不加，请注释掉这一行，默认密码是 123456
       
       # --- 🌐 代理网络配置 (拯救 Bark 通知海外阻断的关键) ---
       # 请将 192.168.1.X:7890 替换为你实际的代理服务器 IP 和端口

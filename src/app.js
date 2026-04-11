@@ -4,23 +4,20 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// 引入拆分好的路由
+// 引入路由
 const pageRoutes = require('./routes/page');
 const apiRoutes = require('./routes/api');
+const adminRoutes = require('./routes/admin'); // 【新增】引入后台路由
 
-// 设置 EJS 模板引擎
 app.set('view engine', 'ejs');
-// 告诉 express 视图文件放在哪里 (使用绝对路径避免路径错误)
 app.set('views', path.join(__dirname, 'views'));
-
-// 中间件
 app.use(express.json()); 
 
 // 挂载路由
-app.use('/', pageRoutes);          // 页面路由挂载在根路径
-app.use('/api', apiRoutes);        // API 路由挂载在 /api 前缀下
+app.use('/', pageRoutes);          
+app.use('/api', apiRoutes);        
+app.use('/admin', adminRoutes);    // 【新增】将后台路由挂载到 /admin 路径
 
-// 启动服务器
 app.listen(port, () => {
-    console.log(`🚀 MoveCar App (Refactored) listening at http://localhost:${port}`);
+    console.log(`🚀 MoveCar App listening at http://localhost:${port}`);
 });
