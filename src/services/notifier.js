@@ -20,9 +20,7 @@ class Notifier {
         try { await fetch(url); } catch (e) { console.error('Bark Error:', e); }
     }
 
-    // --- 新增通道 ---
-
-    // 1. WxPusher (微信高级推送)
+    // 1. WxPusher
     static async sendWxPusher(appToken, uid, title, content, confirmUrl) {
         if (!appToken || !uid) return;
         const html = `${content}<br><br><a href="${confirmUrl}" style="color:#0093E9;font-weight:bold;">🚗 点击处理挪车请求</a>`;
@@ -79,24 +77,39 @@ class Notifier {
         } catch (e) { console.error('DingTalk Error:', e); }
     }
 
-    // 6. 电子邮件 (兼容所有 SMTP)
+    // 6. 电子邮件 (修复了配置读取键名错误的致命 Bug)
     static async sendEmail(smtpConfig, toEmail, title, content, confirmUrl) {
-        if (!smtpConfig || !smtpConfig.host || !toEmail) return;
+        // 【关键修复】键名必须与我们在系统设置中保存的 smtpHost, smtpPort 完全一致
+        if (!smtpConfig || !smtpConfig.smtpHost || !toEmail) {
+            console.log('⚠️ 邮件发送跳过：缺少 SMTP 配置或收件人邮箱');
+            return;
+        }
+        
         try {
             const transporter = nodemailer.createTransport({
-                host: smtpConfig.host,
-                port: parseInt(smtpConfig.port) || 465,
-                secure: parseInt(smtpConfig.port) === 465, // 465 走 SSL，587/25 走 TLS
-                auth: { user: smtpConfig.user, pass: smtpConfig.pass }
+                host: smtpConfig.smtpHost,
+                port: parseInt(smtpConfig.smtpPort) || 465,
+                secure: parseInt(smtpConfig.smtpPort) === 465, // 465 走 SSL，587/25 走 TLS
+                auth: { user: smtpConfig.smtpUser, pass: smtpConfig.smtpPass }
             });
-            const html = `<div style="padding:25px;background:#f8fafc;border-radius:12px;font-family:sans-serif;max-width:500px;margin:auto;"><h2 style="color:#1e293b;">${title}</h2><p style="color:#475569;font-size:16px;line-height:1.6;">${content}</p><div style="margin-top:30px;"><a href="${confirmUrl}" style="display:inline-block;padding:14px 24px;background:#0093E9;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;font-size:16px;">🚗 确认处理</a></div><p style="margin-top:30px;font-size:12px;color:#94a3b8;">MoveCar 系统自动发送，请勿回复。</p></div>`;
+
+            const html = `<div style="padding:25px;background:#f8fafc;border-radius:12px;font-family:sans-serif;max-width:500px;margin:auto;"><h2 style="color:#1e293b;">${title}</h2><p style="color:#475569;font-size:16px;line-height:1.6;">${content}</p><div style="margin-top:30px;"><a href="${confirmUrl}" style="display:inline-block;padding:14px 24px;background:#0093E9;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;font-size:16px;">🚗 确认处理</a></div><p style="margin-top:30px;font-size:12px;color:#94a3b8;">MoveCar 系统自动通知，请勿直接回复。</p></div>`;
+            
+            // 如果填了自定义发件人名称就用自定义的，否则用默认账号
+            const fromField = smtpConfig.smtpFrom ? smtpConfig.smtpFrom : `挪车小助手 <${smtpConfig.smtpUser}>`;
+
             await transporter.sendMail({
-                from: `MoveCar 系统 <${smtpConfig.from || smtpConfig.user}>`,
+                from: fromField,
                 to: toEmail,
                 subject: title,
                 html
             });
-        } catch (e) { console.error('Email Error:', e); }
+            
+            // 加入成功日志，方便调试看是不是真的发出去了
+            console.log(`✅ 邮件成功推送到: ${toEmail}`); 
+        } catch (e) { 
+            console.error('❌ 邮件发送报错:', e.message); 
+        }
     }
 
     // 7. 通用 Webhook
