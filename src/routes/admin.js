@@ -11,25 +11,20 @@ const adminAuth = (req, res, next) => {
     else res.status(401).json({ success: false, error: 'Unauthorized: 密码错误' });
 };
 
-// 后台首页 (需 await 获取域名)
 router.get('/', async (req, res) => {
-    const domain = await getBaseDomain(req);
+    const domain = await getBaseDomain();
     res.render('admin', { domain });
 });
 
-// [新增] 保存系统域名
 router.post('/api/settings/domain', adminAuth, async (req, res) => {
     try {
         const { domain } = req.body;
         if (!domain) return res.json({ success: false, error: '域名不能为空' });
         await redisClient.set('movecar:settings:domain', domain.trim());
         res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ success: false, error: e.message });
-    }
+    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// 获取所有车主
 router.get('/api/users', adminAuth, async (req, res) => {
     try {
         const usersData = await redisClient.hGetAll('movecar:users');
@@ -40,7 +35,6 @@ router.get('/api/users', adminAuth, async (req, res) => {
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// 新增/修改车主
 router.post('/api/users', adminAuth, async (req, res) => {
     try {
         const { userKey, carTitle, pushplusToken, barkUrl, phone } = req.body;
@@ -50,7 +44,6 @@ router.post('/api/users', adminAuth, async (req, res) => {
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// 删除车主
 router.delete('/api/users/:key', adminAuth, async (req, res) => {
     try {
         await redisClient.hDel('movecar:users', req.params.key.toLowerCase());

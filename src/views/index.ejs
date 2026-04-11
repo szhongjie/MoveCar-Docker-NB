@@ -105,11 +105,7 @@
         const res = await fetch('/api/notify?u=' + userKey, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ 
-            message: document.getElementById('msgInput').value, 
-            location: userLoc,
-            sessionId: sessionId 
-          })
+          body: JSON.stringify({ message: document.getElementById('msgInput').value, location: userLoc, sessionId: sessionId })
         });
         const data = await res.json();
         if (data.success) {

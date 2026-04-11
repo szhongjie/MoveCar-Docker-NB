@@ -22,17 +22,27 @@
         </div>
 
         <div id="mainContent" class="hidden">
+            <% if (!domain) { %>
+                <div class="bg-red-50 p-4 rounded-xl shadow-sm border border-red-200 mb-6 flex items-start space-x-3">
+                    <div class="text-red-500 text-2xl mt-1">⚠️</div>
+                    <div>
+                        <h3 class="text-red-800 font-bold text-lg">系统初始化未完成：缺少核心域名</h3>
+                        <p class="text-red-600 text-sm mt-1">检测到您还未绑定外网 HTTPS 域名。如果不绑定，挪车二维码、前端位置获取及推送跳转均无法正常工作。请立即在下方配置！</p>
+                    </div>
+                </div>
+            <% } %>
+
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-6 bg-gradient-to-r from-blue-50 to-white">
                 <h2 class="text-lg font-semibold mb-3 text-gray-800">⚙️ 系统全局设置</h2>
                 <div class="flex flex-col md:flex-row md:items-center space-y-3 md:space-y-0 md:space-x-4">
                     <div class="flex-1">
                         <label class="block text-sm text-gray-600 mb-1">
                             外网访问主域名 
-                            <span class="text-red-500 text-xs ml-2 font-normal">⚠️ 必须配置 https:// 协议，否则系统无法获取访客 GPS 定位</span>
+                            <span class="text-red-500 text-xs ml-2 font-normal">须以 https:// 开头</span>
                         </label>
-                        <input type="text" id="iptDomain" value="<%= domain %>" placeholder="例如: https://car.xxxxx.com" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-100 outline-none">
+                        <input type="text" id="iptDomain" value="<%= domain %>" placeholder="请填写: https://xxxxx.com" class="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-100 outline-none">
                     </div>
-                    <button onclick="saveDomain()" class="bg-gray-800 text-white px-6 py-2 rounded font-medium hover:bg-black transition h-[42px] mt-auto">保存域名</button>
+                    <button onclick="saveDomain()" class="bg-gray-800 text-white px-6 py-2 rounded font-medium hover:bg-black transition h-[42px] mt-auto">保存生效</button>
                 </div>
             </div>
 
@@ -61,21 +71,18 @@
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                         </tr>
                     </thead>
-                    <tbody id="userTableBody" class="bg-white divide-y divide-gray-200">
-                    </tbody>
+                    <tbody id="userTableBody" class="bg-white divide-y divide-gray-200"></tbody>
                 </table>
             </div>
         </div>
         
-        <div id="unauthMessage" class="text-center py-20 text-gray-400">
-            🔒 请输入管理密码并登录
-        </div>
+        <div id="unauthMessage" class="text-center py-20 text-gray-400">🔒 请输入管理密码并登录</div>
     </div>
 
     <script>
         let currentDomain = "<%= domain %>";
         let currentToken = localStorage.getItem('movecar_admin_token') || '';
-        let usersDataCache = []; // 缓存用户数据用于编辑
+        let usersDataCache = []; 
 
         window.onload = () => {
             if (currentToken) {
@@ -106,11 +113,7 @@
             try {
                 const res = await fetch(`/admin/api/users?token=${currentToken}`);
                 const result = await res.json();
-                
-                if(!result.success) {
-                    logout();
-                    return alert('密码错误或已失效');
-                }
+                if(!result.success) { logout(); return alert('密码错误或已失效'); }
                 
                 localStorage.setItem('movecar_admin_token', currentToken);
                 document.getElementById('loginArea').classList.add('hidden');
@@ -118,14 +121,14 @@
                 document.getElementById('userArea').classList.remove('hidden');
                 document.getElementById('mainContent').classList.remove('hidden');
                 
-                usersDataCache = result.data; // 写入缓存
+                usersDataCache = result.data; 
                 renderTable(usersDataCache);
             } catch (e) { alert('网络错误'); }
         }
 
         async function saveDomain() {
             const domainVal = document.getElementById('iptDomain').value.trim();
-            if(!domainVal.startsWith('http')) return alert('域名必须以 http:// 或 https:// 开头');
+            if(!domainVal.startsWith('https')) return alert('域名必须以 https:// 开头');
 
             const res = await fetch(`/admin/api/settings/domain?token=${currentToken}`, {
                 method: 'POST',
@@ -136,29 +139,28 @@
             if(data.success) {
                 currentDomain = domainVal.replace(/\/$/, "");
                 alert('✅ 域名修改成功！');
-                loadData();
+                location.reload(); 
             } else { alert(data.error); }
         }
 
         function renderTable(users) {
             const tbody = document.getElementById('userTableBody');
             tbody.innerHTML = '';
-            
             if(users.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">暂无车主，请在上方添加</td></tr>';
                 return;
             }
 
             users.forEach(u => {
-                const fullUrl = `${currentDomain}/?u=${u.userKey}`;
+                const fullUrl = currentDomain ? `${currentDomain}/?u=${u.userKey}` : '';
+                const urlHtml = currentDomain 
+                    ? `<a href="${fullUrl}" target="_blank" class="text-blue-600 hover:underline font-medium truncate max-w-[200px] inline-block">${fullUrl}</a>
+                       <button onclick="copyToClipboard('${fullUrl}', this)" class="bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded border transition">📄 复制</button>`
+                    : `<span class="text-red-500 font-bold text-sm bg-red-50 px-2 py-1 rounded">先在上方保存域名才可生成链接</span>`;
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <div class="flex items-center space-x-2">
-                            <a href="${fullUrl}" target="_blank" class="text-blue-600 hover:underline font-medium truncate max-w-[200px] inline-block">${fullUrl}</a>
-                            <button onclick="copyToClipboard('${fullUrl}', this)" class="bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded border transition">📄 复制</button>
-                        </div>
-                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm"><div class="flex items-center space-x-2">${urlHtml}</div></td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${u.carTitle || '-'}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 space-y-1">
                         ${u.pushplusToken ? '<div class="bg-green-50 text-green-700 text-xs px-2 py-1 rounded border border-green-200 inline-block mr-1">微信</div>' : ''}
@@ -166,7 +168,7 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button onclick="editUser('${u.userKey}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1.5 rounded mr-2 transition">✏️ 编辑</button>
-                        <a href="${currentDomain}/qr?u=${u.userKey}" target="_blank" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1.5 rounded mr-2 transition">🖨️ 挪车码</a>
+                        <a href="${currentDomain ? currentDomain+'/qr?u='+u.userKey : '#'}" target="_blank" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1.5 rounded mr-2 transition ${!currentDomain ? 'opacity-50 cursor-not-allowed' : ''}">🖨️ 挪车码</a>
                         <button onclick="deleteUser('${u.userKey}')" class="text-red-600 hover:text-red-800 bg-red-50 px-3 py-1.5 rounded transition">删除</button>
                     </td>
                 `;
@@ -174,12 +176,10 @@
             });
         }
 
-        // 触发编辑模式
         function editUser(key) {
             const user = usersDataCache.find(u => u.userKey === key);
             if(!user) return;
             
-            // 锁定 Key 的修改
             const iptKey = document.getElementById('iptKey');
             iptKey.value = user.userKey;
             iptKey.readOnly = true;
@@ -190,23 +190,19 @@
             document.getElementById('iptBark').value = user.barkUrl || '';
             document.getElementById('iptPhone').value = user.phone || '';
 
-            // UI 状态切换
             document.getElementById('formTitle').innerHTML = `✏️ 正在编辑：<span class="text-blue-600">${key}</span>`;
             document.getElementById('saveUserBtn').innerHTML = '💾 更新车主信息';
             document.getElementById('saveUserBtn').classList.replace('bg-green-500', 'bg-blue-600');
             document.getElementById('saveUserBtn').classList.replace('hover:bg-green-600', 'hover:bg-blue-700');
             document.getElementById('cancelEditBtn').classList.remove('hidden');
             document.getElementById('formCard').classList.add('ring-2', 'ring-blue-100', 'bg-blue-50/30');
-
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // 取消编辑并重置表单
         function resetForm() {
             const iptKey = document.getElementById('iptKey');
             iptKey.readOnly = false;
             iptKey.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
-            
             ['iptKey','iptTitle','iptPush','iptBark','iptPhone'].forEach(id => document.getElementById(id).value = '');
             
             document.getElementById('formTitle').innerHTML = '✨ 添加车主';
@@ -235,10 +231,7 @@
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
-            if(data.success) {
-                resetForm(); // 保存成功后恢复为添加模式
-                loadData();
-            } else { alert(data.error); }
+            if(data.success) { resetForm(); loadData(); } else { alert(data.error); }
         }
 
         async function deleteUser(key) {

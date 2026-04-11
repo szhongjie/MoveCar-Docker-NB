@@ -7,7 +7,6 @@ const redisClient = redis.createClient({
 
 redisClient.on('error', err => console.error('Redis Client Error', err));
 
-// 自动连接
 (async () => {
     await redisClient.connect();
     console.log('✅ Connected to Redis');

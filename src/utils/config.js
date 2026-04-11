@@ -7,7 +7,6 @@ const CONFIG = {
     RATE_LIMIT_TTL: 60    
 };
 
-// 异步读取车主配置
 async function getUserConfig(userKey) {
     const key = userKey.toLowerCase();
     try {
@@ -18,20 +17,17 @@ async function getUserConfig(userKey) {
     } catch (e) {
         console.error("Redis config read error:", e);
     }
-    // 数据库没有时，给个空兜底
     return { carTitle: '未知车主', pushplusToken: '', barkUrl: '', phone: '' };
 }
 
-// 异步读取绑定的外部域名
-async function getBaseDomain(req) {
+async function getBaseDomain() {
     try {
         const domain = await redisClient.get('movecar:settings:domain');
-        if (domain) return domain.replace(/\/$/, ""); // 去掉末尾斜杠
+        if (domain) return domain.replace(/\/$/, ""); 
     } catch (e) {
         console.error("Redis domain read error:", e);
     }
-    // 如果后台还没设置域名，自动降级为当前访问地址
-    return `${req.protocol}://${req.get('host')}`;
+    return ""; // 强制要求后台配置
 }
 
 module.exports = { CONFIG, getUserConfig, getBaseDomain };
