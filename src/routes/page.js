@@ -3,25 +3,23 @@ const express = require('express');
 const router = express.Router();
 const { getUserConfig, getBaseDomain } = require('../utils/config');
 
-// 1. 二维码生成页
 router.get('/qr', async (req, res) => {
     const userKey = (req.query.u || 'default').toLowerCase();
-    const config = await getUserConfig(userKey); // 改为 await
-    const targetUrl = getBaseDomain(req) + "/?u=" + userKey;
+    const config = await getUserConfig(userKey);
+    const domain = await getBaseDomain(req); // 改为 await
+    const targetUrl = domain + "/?u=" + userKey;
     res.render('qr', { userKey, carTitle: config.carTitle, targetUrl });
 });
 
-// 2. 默认挪车首页
 router.get('/', async (req, res) => {
     const userKey = (req.query.u || 'default').toLowerCase();
-    const config = await getUserConfig(userKey); // 改为 await
+    const config = await getUserConfig(userKey);
     res.render('index', { userKey, carTitle: config.carTitle, phone: config.phone });
 });
 
-// 3. 车主确认页
 router.get('/owner-confirm', async (req, res) => {
     const userKey = (req.query.u || 'default').toLowerCase();
-    const config = await getUserConfig(userKey); // 改为 await
+    const config = await getUserConfig(userKey);
     res.render('confirm', { userKey, carTitle: config.carTitle });
 });
 
