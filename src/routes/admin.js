@@ -16,17 +16,28 @@ router.get('/', async (req, res) => {
     res.render('admin', { sys });
 });
 
-// 保存全局系统配置 (域名、SMTP、公共Token等)
 router.post('/api/settings/system', adminAuth, async (req, res) => {
     try {
         const payload = req.body;
-        // 如果域名没填 https，强制报错
         if (payload.domain && !payload.domain.startsWith('https://')) return res.json({ success: false, error: '域名必须以 https:// 开头' });
         
         for (const [key, value] of Object.entries(payload)) {
             if(value) await redisClient.hSet('movecar:settings:system', key, value.trim());
-            else await redisClient.hDel('movecar:settings:system', key); // 清空空值
+            else await redisClient.hDel('movecar:settings:system', key); 
         }
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// 🌟 新增：保存海报模板 JSON 数组 (带基础校验)
+router.post('/api/settings/templates', adminAuth, async (req, res) => {
+    try {
+        const { templates } = req.body;
+        if (!Array.isArray(templates)) return res.json({ success: false, error: '模板数据必须是 JSON 数组' });
+        if (templates.length === 0) return res.json({ success: false, error: '模板数据不能为空' });
+        
+        // 存入 Redis，前端即刻生效
+        await redisClient.set('movecar:settings:templates', JSON.stringify(templates));
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -43,7 +54,6 @@ router.post('/api/users', adminAuth, async (req, res) => {
     try {
         const body = req.body;
         if (!body.userKey) return res.json({ success: false, error: '必须填写标识码' });
-        // 保存所有可能的新通道字段
         await redisClient.hSet('movecar:users', body.userKey.toLowerCase(), JSON.stringify(body));
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false, error: e.message }); }

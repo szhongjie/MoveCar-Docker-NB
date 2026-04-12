@@ -1,24 +1,198 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>制作挪车码</title>
+  <title>生成专属挪车海报</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.staticfile.net/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.staticfile.net/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    body { font-family: sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-    .qr-card { background: white; padding: 40px 20px; border-radius: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); text-align: center; width: 90%; max-width: 380px; }
-    .qr-img { width: 250px; height: 250px; margin: 25px auto; border: 1px solid #f1f5f9; padding: 8px; border-radius: 12px; }
-    .btn { display: block; background: #0093E9; color: white; text-decoration: none; padding: 16px; border-radius: 16px; font-weight: bold; margin-top: 20px; }
-    .url-info { font-size: 11px; color: #cbd5e1; margin-top: 15px; word-break: break-all; }
+    body { background: #f8fafc; font-family: -apple-system, sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
+    /* 隐藏模板里实际渲染的高清海报容器 (远离屏幕，防止破坏移动端排版) */
+    #export-container { position: fixed; top: -9999px; left: -9999px; z-index: -1; }
+    
+    .template-btn { transition: all 0.2s; border: 2px solid transparent; }
+    .template-btn.active { border-color: #3b82f6; background: #eff6ff; transform: scale(1.05); }
+    
+    /* 缩放预览区，适应各种手机屏幕 */
+    #preview-container { 
+        width: 100%; height: 100%; 
+        display: flex; align-items: center; justify-content: center; 
+        overflow: hidden; 
+    }
+    #preview-wrapper {
+        transform-origin: center center;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        border-radius: 20px; 
+        overflow: hidden;
+    }
+    .custom-scrollbar::-webkit-scrollbar { height: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
   </style>
 </head>
-<body>
-  <div class="qr-card">
-    <h2 style="color:#1e293b"><%= carTitle %> 的专属挪车码</h2>
-    <p style="color:#64748b; font-size:14px; margin-top:8px">扫码通知，保护隐私</p>
-    <img class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=450x450&data=<%= encodeURIComponent(targetUrl) %>">
-    <a href="javascript:window.print()" class="btn">🖨️ 立即打印挪车牌</a>
-    <div class="url-info"><%= targetUrl %></div>
+<body class="flex flex-col h-screen overflow-hidden">
+
+  <div class="h-16 bg-white shadow-sm px-4 flex justify-between items-center z-10 flex-shrink-0">
+    <div>
+        <h1 class="text-lg font-bold text-slate-800 tracking-tight"><%= carTitle %> 的挪车码</h1>
+        <p class="text-xs text-slate-500">选择一个您喜欢的模板</p>
+    </div>
+    <button id="downloadBtn" onclick="downloadPoster()" class="bg-blue-600 text-white px-5 py-2 rounded-full font-bold shadow-md shadow-blue-500/30 hover:bg-blue-700 active:scale-95 transition-all text-sm flex items-center">
+        <span class="mr-1">⬇️</span> 保存高清海报
+    </button>
   </div>
+
+  <div class="flex-1 relative bg-slate-100 overflow-hidden" id="preview-area">
+    <div id="preview-container">
+        <div id="preview-wrapper"></div>
+    </div>
+    <div id="local-qr-box" style="display:none;"></div>
+  </div>
+
+  <div class="bg-white border-t border-slate-200 p-4 pb-8 flex-shrink-0 z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.03)]">
+      <div id="template-list" class="flex space-x-3 overflow-x-auto pb-2 custom-scrollbar">
+          <div class="text-sm text-slate-400 py-3 px-2 whitespace-nowrap">正在拉取模板...</div>
+      </div>
+  </div>
+
+  <div id="export-container"></div>
+
+  <script>
+    const carTitle = "<%= carTitle %>";
+    const targetUrl = "<%= targetUrl %>";
+    let templates = [];
+    let currentTemplate = null;
+    let qrBase64 = "";
+
+    window.onload = async () => {
+        // 1. 本地生成二维码 (解决跨域图片无法被 html2canvas 截屏的致命 Bug)
+        const qrNode = document.createElement('div');
+        new QRCode(qrNode, { text: targetUrl, width: 800, height: 800, correctLevel: QRCode.CorrectLevel.H });
+        
+        // 稍微等待 canvas 渲染完毕
+        setTimeout(async () => {
+            const canvas = qrNode.querySelector('canvas');
+            if(canvas) {
+                qrBase64 = canvas.toDataURL("image/png");
+                await initTemplates();
+            } else {
+                alert("二维码生成失败，请刷新重试");
+            }
+        }, 100);
+    };
+
+    // 从接口拉取模板配置 (支持热更新)
+    async function initTemplates() {
+        try {
+            const res = await fetch('/api/templates');
+            const result = await res.json();
+            if(result.success && result.data.length > 0) {
+                templates = result.data;
+                renderTemplateSelector();
+                selectTemplate(templates[0].id); // 默认选中第一个
+            } else {
+                document.getElementById('template-list').innerHTML = '<div class="text-red-500 text-sm py-2">模板加载失败</div>';
+            }
+        } catch (e) {
+            document.getElementById('template-list').innerHTML = '<div class="text-red-500 text-sm py-2">网络错误</div>';
+        }
+    }
+
+    // 渲染底部选择器
+    function renderTemplateSelector() {
+        const container = document.getElementById('template-list');
+        container.innerHTML = '';
+        templates.forEach(tpl => {
+            const btn = document.createElement('button');
+            btn.className = `template-btn flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 bg-slate-50 rounded-xl`;
+            btn.id = `btn-${tpl.id}`;
+            btn.onclick = () => selectTemplate(tpl.id);
+            btn.innerHTML = `<span class="text-3xl mb-1">${tpl.thumb}</span><span class="text-[10px] font-bold text-slate-600">${tpl.name}</span>`;
+            container.appendChild(btn);
+        });
+    }
+
+    // 选中并渲染模板
+    function selectTemplate(id) {
+        currentTemplate = templates.find(t => t.id === id);
+        
+        // 更新按钮 UI
+        document.querySelectorAll('.template-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`btn-${id}`).classList.add('active');
+
+        // 数据绑定：替换 {{title}} 和 {{qr}}
+        const finalHtml = currentTemplate.html
+            .replace(/\{\{title\}\}/g, carTitle)
+            .replace(/\{\{qr\}\}/g, qrBase64);
+
+        // 1. 渲染隐藏的 1:1 导出 DOM
+        const exportContainer = document.getElementById('export-container');
+        exportContainer.innerHTML = finalHtml;
+
+        // 2. 渲染可见的预览 DOM (计算缩放比例)
+        const wrapper = document.getElementById('preview-wrapper');
+        wrapper.innerHTML = finalHtml;
+        
+        // 动态计算缩放，确保海报能完整塞进手机屏幕
+        const renderBox = wrapper.firstElementChild;
+        if(renderBox) {
+            const targetWidth = renderBox.style.width.replace('px', '');
+            const targetHeight = renderBox.style.height.replace('px', '');
+            
+            const area = document.getElementById('preview-area');
+            const availableWidth = area.clientWidth - 40; // 留白 20px
+            const availableHeight = area.clientHeight - 40;
+            
+            const scaleX = availableWidth / targetWidth;
+            const scaleY = availableHeight / targetHeight;
+            const finalScale = Math.min(scaleX, scaleY);
+            
+            wrapper.style.transform = `scale(${finalScale})`;
+            wrapper.style.width = `${targetWidth}px`;
+            wrapper.style.height = `${targetHeight}px`;
+        }
+    }
+
+    // 🌟 纯前端高清截图导出逻辑
+    async function downloadPoster() {
+        if(!currentTemplate) return;
+        const btn = document.getElementById('downloadBtn');
+        const oldText = btn.innerHTML;
+        btn.innerHTML = '⏳ 正在渲染高清图...';
+        btn.disabled = true;
+
+        const targetNode = document.getElementById('export-container').firstElementChild;
+        
+        try {
+            // 使用 html2canvas 拍照 (开启 scale 保证高清)
+            const canvas = await html2canvas(targetNode, {
+                scale: 2,               // 2倍超采样，打印级别高清
+                useCORS: true,          // 允许跨域
+                backgroundColor: null,  // 保持透明底
+                logging: false
+            });
+
+            // 转化为图片文件并触发下载
+            const link = document.createElement('a');
+            link.download = `挪车码_${carTitle}_${currentTemplate.name}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            btn.innerHTML = '✅ 保存成功';
+            btn.classList.replace('bg-blue-600', 'bg-green-500');
+        } catch (e) {
+            alert('海报生成失败，请换个浏览器重试');
+            console.error(e);
+        }
+        
+        setTimeout(() => {
+            btn.innerHTML = oldText;
+            btn.classList.replace('bg-green-500', 'bg-blue-600');
+            btn.disabled = false;
+        }, 2000);
+    }
+  </script>
 </body>
 </html>
