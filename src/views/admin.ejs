@@ -23,6 +23,11 @@
         
         [x-cloak] { display: none !important; }
     </style>
+    <script>
+        if(localStorage.getItem('movecar_admin_token')) {
+            document.write('<style>#loginView { display: none !important; }</style>');
+        }
+    </script>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans antialiased overflow-hidden selection:bg-blue-200 selection:text-blue-900">
 
@@ -67,7 +72,7 @@
             <div class="p-4 border-t border-slate-800/80 bg-slate-950/30">
                 <div class="flex items-center space-x-3 px-2">
                     <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div>
-                    <span class="text-xs text-slate-400 font-medium">系统运行中 (v2.3.0)</span>
+                    <span class="text-xs text-slate-400 font-medium">系统运行中 (v2.3.1)</span>
                 </div>
             </div>
         </aside>
@@ -114,7 +119,6 @@
                             </div>
                             
                             <div class="space-y-4 max-h-[500px] xl:max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
-                                
                                 <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4 mb-5">
                                     <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 mb-3">👤 基础信息</h3>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -232,7 +236,15 @@
         let currentToken = localStorage.getItem('movecar_admin_token') || '';
         let usersDataCache = []; 
 
-        window.onload = () => { if (currentToken) { document.getElementById('adminPwd').value = currentToken; login(); } };
+        window.onload = () => { 
+            if (currentToken) { 
+                document.getElementById('adminPwd').value = currentToken; 
+                login(); 
+            } else {
+                // 如果没有 token，确保显示登录页（配合顶部的防闪屏脚本）
+                document.getElementById('loginView').style.display = 'flex';
+            }
+        };
 
         async function login() {
             const pwd = document.getElementById('adminPwd').value;
@@ -242,26 +254,35 @@
             try {
                 const res = await fetch(`/admin/api/users?token=${currentToken}`);
                 const result = await res.json();
-                if(!result.success) { localStorage.removeItem('movecar_admin_token'); return alert('授权码错误，请重试'); }
+                if(!result.success) { 
+                    localStorage.removeItem('movecar_admin_token'); 
+                    document.getElementById('loginView').style.display = 'flex'; // 授权失败时恢复显示
+                    return alert('授权码错误，请重试'); 
+                }
                 
                 localStorage.setItem('movecar_admin_token', currentToken);
-                document.getElementById('loginView').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('loginView').classList.add('hidden');
-                    document.getElementById('appView').classList.remove('hidden');
-                }, 300);
+                document.getElementById('loginView').style.display = 'none'; // 静默隐藏
+                document.getElementById('appView').classList.remove('hidden');
 
-                usersDataCache = result.data; renderTable(usersDataCache);
+                usersDataCache = result.data; 
+                renderTable(usersDataCache);
+                
+                // ⭐ 恢复上次选中的 Tab
+                const savedTab = localStorage.getItem('movecar_active_tab') || 'users';
+                switchTab(savedTab);
             } catch (e) { alert('网络错误，请检查服务是否正常'); }
         }
 
         function logout() {
             localStorage.removeItem('movecar_admin_token'); currentToken = ''; document.getElementById('adminPwd').value = '';
-            document.getElementById('appView').classList.add('hidden'); document.getElementById('loginView').classList.remove('hidden');
-            setTimeout(() => { document.getElementById('loginView').style.opacity = '1'; }, 50);
+            document.getElementById('appView').classList.add('hidden'); 
+            document.getElementById('loginView').style.display = 'flex';
         }
 
         function switchTab(tabId) {
+            // ⭐ 记住当前 Tab
+            localStorage.setItem('movecar_active_tab', tabId);
+            
             document.getElementById('tab-users').classList.add('hidden'); document.getElementById('tab-settings').classList.add('hidden');
             document.getElementById('tab-' + tabId).classList.remove('hidden');
 
@@ -309,7 +330,10 @@
             };
             const res = await fetch(`/admin/api/settings/system?token=${currentToken}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
             const data = await res.json();
-            if(data.success) { alert('✅ 全局设置保存成功！'); location.reload(); } else alert(data.error);
+            if(data.success) { 
+                alert('✅ 全局设置保存成功！'); 
+                location.reload(); // ⭐ 刷新网页，因为已经有了本地缓存逻辑，它会自动跳回“系统设置”Tab
+            } else alert(data.error);
         }
 
         function renderTable(users) {
@@ -323,7 +347,6 @@
                     : `<div class="font-bold text-slate-800 mb-1.5">${u.carTitle || u.userKey}</div><span class="text-red-500 text-xs font-bold bg-red-50 px-2 py-1 rounded border border-red-200 shadow-sm">未配域名，链接不可用</span>`;
 
                 let tags = [];
-                // 🌟 在表格里也展示手机号标志
                 if(u.phone) tags.push('📞 手机号');
                 if(u.wxpusherUid) tags.push('WxPusher'); if(u.pushplusToken) tags.push('PushPlus'); if(u.serverChanKey) tags.push('Server酱');
                 if(u.barkUrl) tags.push('Bark'); if(u.email) tags.push('Email'); if(u.tgChatId) tags.push('TG');
@@ -346,7 +369,6 @@
             });
         }
 
-        // 🌟 将 phone 字段重新加回解析数组
         const fields = ['userKey','carTitle','phone','pushplusToken','barkUrl','wxpusherUid','serverChanKey','tgChatId','email','wecomUrl','dingtalkUrl'];
         
         function editUser(key) {
