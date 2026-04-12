@@ -52,7 +52,7 @@
             <div class="p-4 border-t border-slate-800/80 bg-slate-950/30">
                 <div class="flex items-center space-x-3 px-2">
                     <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div>
-                    <span class="text-xs text-slate-400 font-medium">系统运行中 (v2.4.0)</span>
+                    <span class="text-xs text-slate-400 font-medium">系统运行中 (v2.4.1)</span>
                 </div>
             </div>
         </aside>
@@ -221,8 +221,12 @@
                 if(!result.success) { localStorage.removeItem('movecar_admin_token'); document.getElementById('loginView').style.display = 'flex'; return alert('授权码错误，请重试'); }
                 
                 localStorage.setItem('movecar_admin_token', currentToken);
-                document.getElementById('loginView').style.display = 'none';
-                document.getElementById('appView').classList.remove('hidden');
+                // 登录时设置透明度为0，并过渡隐藏
+                document.getElementById('loginView').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loginView').style.display = 'none';
+                    document.getElementById('appView').classList.remove('hidden');
+                }, 300);
 
                 usersDataCache = result.data; renderTable(usersDataCache);
                 
@@ -231,9 +235,21 @@
             } catch (e) { alert('网络错误，请检查服务是否正常'); }
         }
 
+        // ⭐ 修复了退出登录的动画逻辑，重置 opacity，防止空白闪屏
         function logout() {
-            localStorage.removeItem('movecar_admin_token'); currentToken = ''; document.getElementById('adminPwd').value = '';
-            document.getElementById('appView').classList.add('hidden'); document.getElementById('loginView').style.display = 'flex';
+            localStorage.removeItem('movecar_admin_token'); 
+            currentToken = ''; 
+            document.getElementById('adminPwd').value = '';
+            
+            // 隐藏主应用区
+            document.getElementById('appView').classList.add('hidden'); 
+            
+            // 显示登录区，并确保不透明度被恢复为 1
+            const loginView = document.getElementById('loginView');
+            loginView.style.display = 'flex';
+            setTimeout(() => {
+                loginView.style.opacity = '1';
+            }, 50);
         }
 
         function switchTab(tabId) {
@@ -260,7 +276,7 @@
             const titles = {'users': '车主与通道管理', 'settings': '系统全局设置', 'templates': '海报模板管理'};
             document.getElementById('headerTitle').innerText = titles[tabId];
 
-            if (tabId === 'templates') loadTemplates(); // 加载模板数据
+            if (tabId === 'templates') loadTemplates(); 
             if (window.innerWidth < 768) toggleSidebar();
         }
 
@@ -279,7 +295,6 @@
             } catch (e) { alert('数据刷新失败'); }
         }
 
-        // 🌟 新增：读取模板数据并填入 Textarea
         async function loadTemplates() {
             try {
                 const res = await fetch('/api/templates');
@@ -290,7 +305,6 @@
             } catch (e) { console.error('模板读取失败', e); }
         }
 
-        // 🌟 新增：严格校验 JSON 并保存模板
         async function saveTemplates() {
             const btn = document.getElementById('saveTplBtn');
             const rawText = document.getElementById('ipt_templates').value.trim();
