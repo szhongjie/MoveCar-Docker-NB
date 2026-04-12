@@ -2,58 +2,66 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>生成专属挪车海报</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.staticfile.net/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.staticfile.net/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    body { background: #f8fafc; font-family: -apple-system, sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
-    /* 隐藏模板里实际渲染的高清海报容器 (远离屏幕，防止破坏移动端排版) */
-    #export-container { position: fixed; top: -9999px; left: -9999px; z-index: -1; }
+    body { background: #f8fafc; font-family: -apple-system, sans-serif; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
     
-    .template-btn { transition: all 0.2s; border: 2px solid transparent; }
-    .template-btn.active { border-color: #3b82f6; background: #eff6ff; transform: scale(1.05); }
+    /* 导出容器：完全脱离屏幕，只在下载时用到 */
+    #export-container { position: fixed; top: -9999px; left: -9999px; z-index: -999; }
     
-    /* 缩放预览区，适应各种手机屏幕 */
-    #preview-container { 
-        width: 100%; height: 100%; 
-        display: flex; align-items: center; justify-content: center; 
-        overflow: hidden; 
-    }
+    .template-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid transparent; }
+    .template-btn.active { border-color: #3b82f6; background: #eff6ff; transform: scale(1.08); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15); }
+    
+    /* 预览区域核心样式 */
+    #preview-area { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
     #preview-wrapper {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        /* 这里的 transform 会由 JS 动态计算 scale 和 translate */
         transform-origin: center center;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-        border-radius: 20px; 
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        border-radius: 12px; 
         overflow: hidden;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        opacity: 0; /* 默认透明，渲染好后再显示，防止闪烁 */
     }
-    .custom-scrollbar::-webkit-scrollbar { height: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+
+    /* 优化横向滚动条，支持原生惯性滑动 */
+    .custom-scrollbar { -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+    .custom-scrollbar::-webkit-scrollbar { height: 0px; display: none; /* 手机端隐藏丑陋的滚动条 */ }
   </style>
 </head>
-<body class="flex flex-col h-screen overflow-hidden">
+<body class="flex flex-col h-screen">
 
-  <div class="h-16 bg-white shadow-sm px-4 flex justify-between items-center z-10 flex-shrink-0">
-    <div>
-        <h1 class="text-lg font-bold text-slate-800 tracking-tight"><%= carTitle %> 的挪车码</h1>
-        <p class="text-xs text-slate-500">选择一个您喜欢的模板</p>
+  <div class="h-16 bg-white shadow-sm px-4 flex justify-between items-center z-20 flex-shrink-0">
+    <div class="truncate mr-4">
+        <h1 class="text-lg font-bold text-slate-800 tracking-tight truncate"><%= carTitle %> 的挪车码</h1>
+        <p class="text-[11px] text-slate-500">左右滑动选择你喜欢的样式</p>
     </div>
-    <button id="downloadBtn" onclick="downloadPoster()" class="bg-blue-600 text-white px-5 py-2 rounded-full font-bold shadow-md shadow-blue-500/30 hover:bg-blue-700 active:scale-95 transition-all text-sm flex items-center">
-        <span class="mr-1">⬇️</span> 保存高清海报
+    <button id="downloadBtn" onclick="downloadPoster()" class="bg-blue-600 text-white px-4 py-2 rounded-full font-bold shadow-md hover:bg-blue-700 active:scale-95 transition-all text-sm flex items-center flex-shrink-0 disabled:opacity-50">
+        <span class="mr-1">⬇️</span> 保存海报
     </button>
   </div>
 
-  <div class="flex-1 relative bg-slate-100 overflow-hidden" id="preview-area">
-    <div id="preview-container">
-        <div id="preview-wrapper"></div>
+  <div class="flex-1 bg-slate-100 overflow-hidden z-10" id="preview-area">
+    <div id="preview-wrapper"></div>
+    
+    <div id="loading-spinner" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+        <svg class="animate-spin h-8 w-8 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <span class="text-xs font-bold tracking-widest">魔法生成中...</span>
     </div>
+
     <div id="local-qr-box" style="display:none;"></div>
   </div>
 
-  <div class="bg-white border-t border-slate-200 p-4 pb-8 flex-shrink-0 z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.03)]">
-      <div id="template-list" class="flex space-x-3 overflow-x-auto pb-2 custom-scrollbar">
-          <div class="text-sm text-slate-400 py-3 px-2 whitespace-nowrap">正在拉取模板...</div>
+  <div class="bg-white border-t border-slate-200 p-4 pb-6 flex-shrink-0 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.03)]">
+      <div id="template-list" class="flex space-x-3 overflow-x-auto pb-2 custom-scrollbar items-center">
+          <div class="text-sm text-slate-400 py-3 px-2 whitespace-nowrap">正在拉取云端模板...</div>
       </div>
   </div>
 
@@ -66,24 +74,29 @@
     let currentTemplate = null;
     let qrBase64 = "";
 
-    window.onload = async () => {
-        // 1. 本地生成二维码 (解决跨域图片无法被 html2canvas 截屏的致命 Bug)
+    window.onload = () => {
+        // 1. 生成本地二维码 (解决跨域画布污染)
         const qrNode = document.createElement('div');
-        new QRCode(qrNode, { text: targetUrl, width: 800, height: 800, correctLevel: QRCode.CorrectLevel.H });
+        new QRCode(qrNode, { 
+            text: targetUrl, 
+            width: 800, 
+            height: 800, 
+            correctLevel: QRCode.CorrectLevel.H 
+        });
         
-        // 稍微等待 canvas 渲染完毕
+        // 等待二维码 Base64 生成完毕
         setTimeout(async () => {
             const canvas = qrNode.querySelector('canvas');
             if(canvas) {
                 qrBase64 = canvas.toDataURL("image/png");
                 await initTemplates();
             } else {
-                alert("二维码生成失败，请刷新重试");
+                alert("二维码初始化失败，请刷新页面重试");
             }
-        }, 100);
+        }, 150);
     };
 
-    // 从接口拉取模板配置 (支持热更新)
+    // 从 API 拉取模板 (热更新)
     async function initTemplates() {
         try {
             const res = await fetch('/api/templates');
@@ -93,97 +106,130 @@
                 renderTemplateSelector();
                 selectTemplate(templates[0].id); // 默认选中第一个
             } else {
-                document.getElementById('template-list').innerHTML = '<div class="text-red-500 text-sm py-2">模板加载失败</div>';
+                document.getElementById('template-list').innerHTML = '<div class="text-red-500 text-sm py-2 px-4">模板加载失败</div>';
             }
         } catch (e) {
-            document.getElementById('template-list').innerHTML = '<div class="text-red-500 text-sm py-2">网络错误</div>';
+            document.getElementById('template-list').innerHTML = '<div class="text-red-500 text-sm py-2 px-4">网络异常，请检查网络</div>';
         }
     }
 
-    // 渲染底部选择器
+    // 渲染底部滑动列表
     function renderTemplateSelector() {
         const container = document.getElementById('template-list');
         container.innerHTML = '';
         templates.forEach(tpl => {
             const btn = document.createElement('button');
-            btn.className = `template-btn flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 bg-slate-50 rounded-xl`;
+            btn.className = `template-btn flex-shrink-0 flex flex-col items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 rounded-xl mx-1`;
             btn.id = `btn-${tpl.id}`;
             btn.onclick = () => selectTemplate(tpl.id);
-            btn.innerHTML = `<span class="text-3xl mb-1">${tpl.thumb}</span><span class="text-[10px] font-bold text-slate-600">${tpl.name}</span>`;
+            btn.innerHTML = `<span class="text-2xl sm:text-3xl mb-1">${tpl.thumb}</span><span class="text-[10px] font-bold text-slate-600 truncate w-full px-1">${tpl.name}</span>`;
             container.appendChild(btn);
         });
     }
 
-    // 选中并渲染模板
+    // ⭐ 核心优化：只渲染预览图并完美居中缩放
     function selectTemplate(id) {
         currentTemplate = templates.find(t => t.id === id);
         
-        // 更新按钮 UI
+        // 按钮高亮切换
         document.querySelectorAll('.template-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(`btn-${id}`).classList.add('active');
+        const activeBtn = document.getElementById(`btn-${id}`);
+        activeBtn.classList.add('active');
+        
+        // 自动将选中的按钮滚动到可视区域中间
+        activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 
-        // 数据绑定：替换 {{title}} 和 {{qr}}
+        // 数据绑定
         const finalHtml = currentTemplate.html
             .replace(/\{\{title\}\}/g, carTitle)
             .replace(/\{\{qr\}\}/g, qrBase64);
 
-        // 1. 渲染隐藏的 1:1 导出 DOM
-        const exportContainer = document.getElementById('export-container');
-        exportContainer.innerHTML = finalHtml;
-
-        // 2. 渲染可见的预览 DOM (计算缩放比例)
         const wrapper = document.getElementById('preview-wrapper');
-        wrapper.innerHTML = finalHtml;
+        const spinner = document.getElementById('loading-spinner');
         
-        // 动态计算缩放，确保海报能完整塞进手机屏幕
-        const renderBox = wrapper.firstElementChild;
-        if(renderBox) {
-            const targetWidth = renderBox.style.width.replace('px', '');
-            const targetHeight = renderBox.style.height.replace('px', '');
-            
-            const area = document.getElementById('preview-area');
-            const availableWidth = area.clientWidth - 40; // 留白 20px
-            const availableHeight = area.clientHeight - 40;
-            
-            const scaleX = availableWidth / targetWidth;
-            const scaleY = availableHeight / targetHeight;
-            const finalScale = Math.min(scaleX, scaleY);
-            
-            wrapper.style.transform = `scale(${finalScale})`;
-            wrapper.style.width = `${targetWidth}px`;
-            wrapper.style.height = `${targetHeight}px`;
-        }
+        // 隐藏当前 wrapper 并显示 loading
+        wrapper.style.opacity = 0;
+        spinner.style.display = 'flex';
+
+        // 注入预览 DOM（注意：此处绝对不再向 export-container 注入！）
+        wrapper.innerHTML = finalHtml;
+
+        // 等待浏览器渲染 DOM 结构以便我们读取宽高
+        requestAnimationFrame(() => {
+            const renderBox = wrapper.firstElementChild;
+            if(renderBox) {
+                // 获取模板预设的原始宽高
+                const targetWidth = parseInt(renderBox.style.width) || 800;
+                const targetHeight = parseInt(renderBox.style.height) || 1200;
+
+                wrapper.style.width = `${targetWidth}px`;
+                wrapper.style.height = `${targetHeight}px`;
+
+                // 获取可视区域宽高，预留 40px 安全边距
+                const area = document.getElementById('preview-area');
+                const availableWidth = area.clientWidth - 40;
+                const availableHeight = area.clientHeight - 40;
+
+                // 计算完美缩放比
+                const scaleX = availableWidth / targetWidth;
+                const scaleY = availableHeight / targetHeight;
+                const finalScale = Math.min(scaleX, scaleY);
+
+                // ⭐ 核心居中缩放魔法：平移 50% 后再缩放
+                wrapper.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
+                
+                // 平滑显示
+                setTimeout(() => {
+                    spinner.style.display = 'none';
+                    wrapper.style.opacity = 1;
+                }, 50);
+            }
+        });
     }
 
-    // 🌟 纯前端高清截图导出逻辑
+    // 懒渲染：只有点击下载时，才把巨型 DOM 塞进后台渲染
     async function downloadPoster() {
         if(!currentTemplate) return;
         const btn = document.getElementById('downloadBtn');
         const oldText = btn.innerHTML;
-        btn.innerHTML = '⏳ 正在渲染高清图...';
+        btn.innerHTML = '⏳ 生成高清图...';
         btn.disabled = true;
 
-        const targetNode = document.getElementById('export-container').firstElementChild;
-        
         try {
-            // 使用 html2canvas 拍照 (开启 scale 保证高清)
+            // 1. 此时才将 HTML 放入用于截图的隐藏容器
+            const finalHtml = currentTemplate.html
+                .replace(/\{\{title\}\}/g, carTitle)
+                .replace(/\{\{qr\}\}/g, qrBase64);
+                
+            const exportContainer = document.getElementById('export-container');
+            exportContainer.innerHTML = finalHtml;
+
+            // 给浏览器 100ms 绘制后台 DOM 的时间
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const targetNode = exportContainer.firstElementChild;
+
+            // 2. 高清截图 (scale: 2 即 2 倍超采样)
             const canvas = await html2canvas(targetNode, {
-                scale: 2,               // 2倍超采样，打印级别高清
-                useCORS: true,          // 允许跨域
-                backgroundColor: null,  // 保持透明底
+                scale: 2,               
+                useCORS: true,          
+                backgroundColor: null,  
                 logging: false
             });
 
-            // 转化为图片文件并触发下载
+            // 3. 触发下载
             const link = document.createElement('a');
-            link.download = `挪车码_${carTitle}_${currentTemplate.name}.png`;
+            link.download = `挪车海报_${carTitle}_${currentTemplate.name}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
             
             btn.innerHTML = '✅ 保存成功';
             btn.classList.replace('bg-blue-600', 'bg-green-500');
+
+            // 4. 用完即焚，清理内存
+            exportContainer.innerHTML = '';
         } catch (e) {
-            alert('海报生成失败，请换个浏览器重试');
+            alert('海报保存失败，请换个浏览器重试');
             console.error(e);
         }
         
