@@ -11,14 +11,20 @@
     .card { background: white; border-radius: 24px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .header { text-align: center; }
     .icon-wrap { width: 64px; height: 64px; background: #0093E9; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 32px; color: white; }
-    textarea { width: 100%; min-height: 90px; border: 1px solid #eee; border-radius: 14px; padding: 15px; font-size: 16px; outline: none; margin-top: 10px; background:#fcfcfc; resize:none; }
-    .tag { display: inline-block; background: #f1f5f9; padding: 10px 16px; border-radius: 20px; font-size: 14px; margin: 5px 3px; cursor: pointer; color:#475569; }
-    .btn-main { background: #0093E9; color: white; border: none; padding: 18px; border-radius: 18px; font-size: 18px; font-weight: bold; cursor: pointer; width: 100%; }
-    .btn-phone { background: #ef4444; color: white; border: none; padding: 15px; border-radius: 15px; text-decoration: none; text-align: center; font-weight: bold; display: block; margin-top: 10px; }
+    textarea { width: 100%; min-height: 90px; border: 1px solid #eee; border-radius: 14px; padding: 15px; font-size: 16px; outline: none; margin-top: 10px; background:#fcfcfc; resize:none; transition: all 0.3s; }
+    textarea:focus { border-color: #0093E9; background: #fff; box-shadow: 0 0 0 3px rgba(0,147,233,0.1); }
+    .tag { display: inline-block; background: #f1f5f9; padding: 10px 16px; border-radius: 20px; font-size: 14px; margin: 5px 3px; cursor: pointer; color:#475569; transition: all 0.2s; }
+    .tag:active { transform: scale(0.95); background: #e2e8f0; }
+    .btn-main { background: #0093E9; color: white; border: none; padding: 18px; border-radius: 18px; font-size: 18px; font-weight: bold; cursor: pointer; width: 100%; transition: all 0.3s; }
+    .btn-main:disabled { opacity: 0.8; cursor: not-allowed; }
+    .btn-phone { background: #ef4444; color: white; border: none; padding: 15px; border-radius: 15px; text-decoration: none; text-align: center; font-weight: bold; display: block; margin-top: 10px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); }
     .hidden { display: none !important; }
     .map-links { display: flex; gap: 10px; margin-top: 15px; }
     .map-btn { flex: 1; padding: 14px; border-radius: 14px; text-align: center; text-decoration: none; color: white; font-weight: bold; }
     .amap { background: #1890ff; } .apple { background: #000; }
+    
+    /* 状态提示框增强样式 */
+    #locStatus { transition: all 0.3s; line-height: 1.5; }
   </style>
 </head>
 <body>
@@ -28,16 +34,22 @@
       <h2 style="color:#1e293b">呼叫 <%= carTitle %></h2>
       <p style="color:#64748b; font-size:14px; margin-top:5px">提示：车主将收到即时提醒</p>
     </div>
+    
     <div class="card">
-      <textarea id="msgInput" placeholder="请输入留言..."></textarea>
+      <textarea id="msgInput" placeholder="请输入留言（选填）..."></textarea>
       <div style="margin-top:5px">
         <div class="tag" onclick="setTag('麻烦挪下车，谢谢')">🚧 挡路了</div>
         <div class="tag" onclick="setTag('临时停靠，请包涵')">⏱️ 临停</div>
         <div class="tag" onclick="setTag('有急事外出，速来')">🏃 急事</div>
       </div>
     </div>
-    <div class="card" id="locStatus" style="font-size:13px; color:#94a3b8; text-align:center;">定位请求中...</div>
-    <button id="notifyBtn" class="btn-main" onclick="sendNotify()">🔔 发送通知</button>
+
+    <div class="card" id="locStatus" style="font-size:13px; color:#64748b; text-align:center; background:#f8fafc; border: 1px solid #e2e8f0;">
+      📍 正在请求定位授权<br>
+      <span style="font-size:11px; color:#94a3b8">拒绝授权将触发 30 秒防骚扰延迟</span>
+    </div>
+
+    <button id="notifyBtn" class="btn-main" onclick="handleNotifyClick()">🔔 发送通知</button>
   </div>
 
   <div class="container hidden" id="successView">
@@ -57,7 +69,7 @@
     <div>
       <button class="btn-main" style="background:#f59e0b; margin-top:10px;" onclick="location.reload()">🔄 刷新状态</button>
       <% if (phone) { %>
-        <a href="tel:<%= phone %>" class="btn-phone">📞 拨打车主电话</a>
+        <a href="tel:<%= phone %>" class="btn-phone">📞 紧急拨打车主电话</a>
       <% } %>
     </div>
   </div>
@@ -74,14 +86,36 @@
 
     window.onload = async () => {
       checkActiveSession();
+      
+      const locStatus = document.getElementById('locStatus');
+      
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(p => {
-          userLoc = { lat: p.coords.latitude, lng: p.coords.longitude };
-          document.getElementById('locStatus').innerText = '📍 位置已锁定';
-          document.getElementById('locStatus').style.color = '#10b981';
-        }, () => {
-          document.getElementById('locStatus').innerText = '📍 无法获取精确位置';
-        });
+        // 设置 5 秒超时，防止部分浏览器一直死等
+        navigator.geolocation.getCurrentPosition(
+          p => {
+            // ✅ 授权成功
+            userLoc = { lat: p.coords.latitude, lng: p.coords.longitude };
+            locStatus.innerHTML = '📍 <b>位置已锁定</b><br><span style="font-size:12px;color:#059669">您已通过安全校验，通知将极速送达车主。</span>';
+            locStatus.style.color = '#10b981';
+            locStatus.style.background = '#ecfdf5';
+            locStatus.style.border = '1px solid #a7f3d0';
+          }, 
+          err => {
+            // ❌ 拒绝授权或获取失败
+            locStatus.innerHTML = '⚠️ <b>未授权位置信息</b><br><span style="font-size:12px;color:#dc2626">防骚扰机制已激活：点击发送后将强制倒计时 30 秒</span>';
+            locStatus.style.color = '#b91c1c';
+            locStatus.style.background = '#fef2f2';
+            locStatus.style.border = '1px solid #fecaca';
+            
+            // 弹窗警告（起到威慑作用）
+            setTimeout(() => {
+                alert('⚠️ 提示：\n\n您未授权或无法获取位置信息。\n为了防止恶意扫码骚扰，系统已开启安全保护。\n\n稍后点击发送时，将强制等待 30 秒才会发出通知。');
+            }, 500);
+          },
+          { timeout: 5000, enableHighAccuracy: true }
+        );
+      } else {
+         locStatus.innerHTML = '⚠️ 浏览器不支持定位，防骚扰机制激活';
       }
     };
 
@@ -98,9 +132,44 @@
 
     function setTag(t) { document.getElementById('msgInput').value = t; }
 
-    async function sendNotify() {
+    // 核心逻辑：拦截点击，执行惩罚机制
+    async function handleNotifyClick() {
+        const btn = document.getElementById('notifyBtn');
+        if (btn.disabled) return;
+        
+        // 禁用按钮防止连点
+        btn.disabled = true;
+
+        if (!userLoc) {
+            // 触发 30 秒倒计时惩罚
+            let countdown = 30;
+            btn.style.background = '#f59e0b'; // 变成警告的橙色
+            btn.style.boxShadow = '0 0 15px rgba(245, 158, 11, 0.5)';
+            btn.innerText = `防骚扰核验中... (${countdown}s)`;
+            
+            const timer = setInterval(async () => {
+                countdown--;
+                if (countdown > 0) {
+                    btn.innerText = `防骚扰核验中... (${countdown}s)`;
+                } else {
+                    // 倒计时结束，恢复按钮状态并发送
+                    clearInterval(timer);
+                    btn.style.background = '#0093E9';
+                    btn.style.boxShadow = 'none';
+                    btn.innerText = '正在联络车主...';
+                    await executeSendRequest();
+                }
+            }, 1000);
+        } else {
+            // 有定位，秒发！
+            btn.innerText = '正在极速联络车主...';
+            await executeSendRequest();
+        }
+    }
+
+    // 真实的发送请求
+    async function executeSendRequest() {
       const btn = document.getElementById('notifyBtn');
-      btn.disabled = true; btn.innerText = '正在联络车主...';
       try {
         const res = await fetch('/api/notify?u=' + userKey, {
           method: 'POST',
@@ -111,8 +180,16 @@
         if (data.success) {
           showSuccess({status: 'waiting'});
           pollStatus();
-        } else { alert(data.error); btn.disabled = false; btn.innerText = '🔔 发送通知'; }
-      } catch(e) { alert('服务暂时不可用'); btn.disabled = false; }
+        } else { 
+          alert(data.error); 
+          btn.disabled = false; 
+          btn.innerText = '🔔 发送通知'; 
+        }
+      } catch(e) { 
+        alert('服务暂时不可用，请拨打电话或稍后再试'); 
+        btn.disabled = false;
+        btn.innerText = '🔔 发送通知'; 
+      }
     }
 
     function showSuccess(data) {

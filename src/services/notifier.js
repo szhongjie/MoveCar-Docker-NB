@@ -59,23 +59,30 @@ class Notifier {
         } catch (e) { console.error('Telegram Error:', e); }
     }
 
-    // 4. 企业微信群机器人 (⭐ 已修复：改为纯文本类型，兼容微信客户端)
+    // 4. 企业微信群机器人 (⭐ 已升级为高颜值“图文卡片”，点击整张卡片直接跳转)
     static async sendWeCom(url, title, content, confirmUrl) {
         if (!url) return;
-        // 不再使用 Markdown，改用 text 保证多端兼容
-        const textContent = `${title}\n\n${content}\n\n🚗 马上处理：\n${confirmUrl}`;
         try {
             await fetch(url, { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ 
-                    msgtype: 'text', 
-                    text: { content: textContent } 
+                    msgtype: 'news', 
+                    news: {
+                        articles: [
+                            {
+                                title: title,                                        // 卡片主标题
+                                description: `${content}\n\n👇 点击本卡片立即处理`, // 卡片灰色副标题/摘要
+                                url: confirmUrl,                                     // 点击卡片跳转的链接
+                                picurl: 'https://cdn-icons-png.flaticon.com/512/3204/3204121.png' // 右侧的高清小汽车缩略图
+                            }
+                        ]
+                    } 
                 }) 
             });
         } catch (e) { console.error('WeCom Error:', e); }
     }
-
+    
     // 5. 钉钉群机器人
     static async sendDingTalk(url, title, content, confirmUrl) {
         if (!url) return;
