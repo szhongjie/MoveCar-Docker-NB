@@ -8,11 +8,19 @@
     <style>
         .channel-group { @apply p-5 border border-slate-200 rounded-xl bg-white mb-5 shadow-sm; }
         .channel-title { @apply text-sm font-bold text-slate-800 mb-4 flex items-center; }
-        .input-field { @apply w-full bg-slate-100 border border-slate-300 text-slate-900 rounded-lg px-3 py-2.5 text-sm shadow-inner font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus:shadow-md hover:bg-slate-200 hover:border-slate-400 transition-all placeholder:text-slate-400; }
-        .label-text { @apply block text-xs text-slate-700 mb-2 font-bold tracking-wide; }
+        
+        .input-field { 
+            @apply w-full bg-slate-100 border border-slate-300 text-slate-900 rounded-lg px-4 py-3 text-sm shadow-inner font-medium
+            focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus:shadow-md
+            hover:bg-slate-200 hover:border-slate-400 transition-all placeholder:text-slate-400; 
+        }
+        
+        .label-text { @apply block text-sm text-slate-700 mb-2 font-bold tracking-wide; }
+        
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 20px; }
+        
         [x-cloak] { display: none !important; }
     </style>
     <script>if(localStorage.getItem('movecar_admin_token')) { document.write('<style>#loginView { display: none !important; }</style>'); }</script>
@@ -20,52 +28,72 @@
 <body class="bg-slate-100 text-slate-800 font-sans antialiased overflow-hidden selection:bg-blue-200 selection:text-blue-900">
 
     <div id="loginView" class="fixed inset-0 z-[100] bg-slate-200 flex items-center justify-center p-4 transition-opacity duration-300">
-        <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-slate-300 transform transition-all">
+        <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 sm:p-10 border border-slate-300 transform transition-all">
             <div class="text-center mb-8">
                 <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-lg shadow-blue-500/30 mb-4">🚗</div>
                 <h1 class="text-3xl font-black text-slate-800 tracking-tight">MoveCar <span class="text-blue-600">Pro</span></h1>
                 <p class="text-slate-500 mt-2 text-sm font-medium">请输入管理密码以进入控制台</p>
             </div>
-            <div class="space-y-5 bg-slate-50 p-5 rounded-xl border border-slate-100">
-                <div>
-                    <label class="label-text text-center block mb-3">🔑 管理授权码</label>
-                    <input type="password" id="adminPwd" placeholder="点击此处输入密码" class="input-field text-center text-lg tracking-widest" onkeypress="if(event.key==='Enter') login()">
+            <div class="space-y-6 bg-slate-50 p-6 rounded-xl border border-slate-100 flex flex-col items-center">
+                <div class="w-full text-center">
+                    <label class="label-text block mb-3">🔑 管理授权码</label>
+                    <input type="password" id="adminPwd" placeholder="点击此处输入密码" class="input-field text-center text-lg tracking-widest w-full" onkeypress="if(event.key==='Enter') login()">
                 </div>
-                <button onclick="login()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow-md hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/30 transition-all active:scale-[0.98]">解 锁</button>
+                <button onclick="login()" class="w-full bg-blue-600 text-white py-3.5 rounded-lg font-bold shadow-md hover:bg-blue-700 focus:ring-4 focus:ring-blue-500/30 transition-all active:scale-[0.98]">解 锁</button>
             </div>
         </div>
     </div>
 
     <div id="appView" class="hidden h-screen w-full flex bg-slate-50">
+        
         <div id="mobileBackdrop" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden transition-opacity" onclick="toggleSidebar()"></div>
 
         <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col shadow-2xl md:shadow-none">
             <div class="h-16 flex items-center px-6 border-b border-slate-800/80 bg-slate-950/50 flex-shrink-0">
                 <span class="text-xl font-black tracking-tight">🚗 MoveCar <span class="text-blue-500">Pro</span></span>
             </div>
+            
             <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
                 <p class="px-2 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">核心业务</p>
-                <button onclick="switchTab('users')" id="nav-users" class="nav-btn w-full flex items-center px-4 py-3 bg-blue-600 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-900/20"><span class="mr-3 text-lg">👥</span> 车主与通道管理</button>
-                <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl font-bold transition-all"><span class="mr-3 text-lg">⚙️</span> 系统全局设置</button>
-                <button onclick="switchTab('templates')" id="nav-templates" class="nav-btn w-full flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl font-bold transition-all"><span class="mr-3 text-lg">🎨</span> 海报模板管理</button>
+                
+                <button onclick="switchTab('users')" id="nav-users" class="nav-btn w-full flex items-center px-4 py-3 bg-blue-600 text-white rounded-xl font-bold transition-all shadow-md shadow-blue-900/20">
+                    <span class="mr-3 text-lg">👥</span> 车主与通道管理
+                </button>
+                
+                <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl font-bold transition-all">
+                    <span class="mr-3 text-lg">⚙️</span> 系统全局设置
+                </button>
+
+                <button onclick="switchTab('templates')" id="nav-templates" class="nav-btn w-full flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl font-bold transition-all">
+                    <span class="mr-3 text-lg">🎨</span> 海报模板管理
+                </button>
             </nav>
+
             <div class="p-4 border-t border-slate-800/80 bg-slate-950/30">
                 <div class="flex items-center space-x-3 px-2">
                     <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div>
-                    <span class="text-xs text-slate-400 font-medium">系统运行中 (v2.4.1)</span>
+                    <span class="text-xs text-slate-400 font-medium">系统运行中 (v2.4.2)</span>
                 </div>
             </div>
         </aside>
 
         <main class="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-hidden relative">
+            
             <header class="h-16 bg-white shadow-sm border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 flex-shrink-0 z-10">
                 <div class="flex items-center">
-                    <button onclick="toggleSidebar()" class="md:hidden mr-4 text-slate-500 hover:text-slate-800 focus:outline-none p-2 rounded-lg hover:bg-slate-100 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+                    <button onclick="toggleSidebar()" class="md:hidden mr-4 text-slate-500 hover:text-slate-800 focus:outline-none p-2 rounded-lg hover:bg-slate-100 transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
                     <h2 class="text-lg font-bold text-slate-800" id="headerTitle">车主与通道管理</h2>
                 </div>
+                
                 <div class="flex items-center space-x-4">
-                    <span class="hidden sm:inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-600"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>管理员在线</span>
-                    <button onclick="logout()" class="text-sm font-bold text-slate-500 hover:text-red-600 bg-slate-50 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-red-200 transition-colors">退出登录</button>
+                    <span class="hidden sm:inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-600">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>管理员在线
+                    </span>
+                    <button onclick="logout()" class="text-sm font-bold text-slate-500 hover:text-red-600 bg-slate-50 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-red-200 transition-colors">
+                        退出登录
+                    </button>
                 </div>
             </header>
 
@@ -82,6 +110,7 @@
                 <% } %>
 
                 <div id="tab-users" class="space-y-6 animate-[fadeIn_0.3s_ease-out]">
+                    
                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                         <div class="xl:col-span-1 bg-slate-50 p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-300 h-fit transition-all" id="formCard">
                             <div class="flex justify-between items-center mb-5 pb-3 border-b border-slate-200">
@@ -90,32 +119,67 @@
                             </div>
                             
                             <div class="space-y-4 max-h-[500px] xl:max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
-                                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4 mb-5">
-                                    <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 mb-3">👤 基础信息</h3>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div><label class="label-text"><span class="text-red-500">*</span> 唯一标识 (u参数)</label><input type="text" id="ipt_userKey" placeholder="点击输入..." class="input-field"></div>
-                                        <div><label class="label-text">车牌号或称呼</label><input type="text" id="ipt_carTitle" placeholder="点击输入..." class="input-field"></div>
+                                
+                                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5 mb-5">
+                                    <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 mb-2">👤 基础信息</h3>
+                                    
+                                    <div class="w-full">
+                                        <label class="label-text"><span class="text-red-500">*</span> 唯一标识 (u参数)</label>
+                                        <input type="text" id="ipt_userKey" placeholder="点击输入..." class="input-field">
                                     </div>
-                                    <div><label class="label-text">车主手机号 (填后主页显示拨打按钮)</label><input type="text" id="ipt_phone" placeholder="选填，如 13800138000" class="input-field"></div>
+                                    
+                                    <div class="w-full">
+                                        <label class="label-text">车牌号或称呼</label>
+                                        <input type="text" id="ipt_carTitle" placeholder="点击输入..." class="input-field">
+                                    </div>
+                                    
+                                    <div class="w-full">
+                                        <label class="label-text">车主手机号 (填后主页显示拨打按钮)</label>
+                                        <input type="text" id="ipt_phone" placeholder="选填，如 13800138000" class="input-field">
+                                    </div>
                                 </div>
                                 
                                 <div class="channel-group">
                                     <div class="channel-title text-green-600">💬 微信生态通道</div>
-                                    <div class="space-y-4">
-                                        <div><label class="label-text">WxPusher UID (推荐)</label><input type="text" id="ipt_wxpusherUid" placeholder="UID_xxxxx" class="input-field"></div>
-                                        <div><label class="label-text">PushPlus Token</label><input type="text" id="ipt_pushplusToken" placeholder="点击输入 Token" class="input-field"></div>
-                                        <div><label class="label-text">Server酱 SendKey</label><input type="text" id="ipt_serverChanKey" placeholder="点击输入 SendKey" class="input-field"></div>
+                                    <div class="space-y-5">
+                                        <div class="w-full">
+                                            <label class="label-text">WxPusher UID (推荐)</label>
+                                            <input type="text" id="ipt_wxpusherUid" placeholder="UID_xxxxx" class="input-field">
+                                        </div>
+                                        <div class="w-full">
+                                            <label class="label-text">PushPlus Token</label>
+                                            <input type="text" id="ipt_pushplusToken" placeholder="点击输入 Token" class="input-field">
+                                        </div>
+                                        <div class="w-full">
+                                            <label class="label-text">Server酱 SendKey</label>
+                                            <input type="text" id="ipt_serverChanKey" placeholder="点击输入 SendKey" class="input-field">
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div class="channel-group">
                                     <div class="channel-title text-indigo-600">💼 办公与极客通道</div>
-                                    <div class="space-y-4">
-                                        <div><label class="label-text">苹果 Bark URL</label><input type="text" id="ipt_barkUrl" placeholder="https://api.day.app/xxx" class="input-field"></div>
-                                        <div><label class="label-text">通知接收邮箱 (需配好系统SMTP)</label><input type="text" id="ipt_email" placeholder="example@qq.com" class="input-field"></div>
-                                        <div><label class="label-text">Telegram Chat ID</label><input type="text" id="ipt_tgChatId" placeholder="纯数字 ID" class="input-field"></div>
-                                        <div><label class="label-text">企业微信 Webhook</label><input type="text" id="ipt_wecomUrl" placeholder="https://qyapi.weixin.qq.com/..." class="input-field"></div>
-                                        <div><label class="label-text">钉钉 Webhook</label><input type="text" id="ipt_dingtalkUrl" placeholder="https://oapi.dingtalk.com/..." class="input-field"></div>
+                                    <div class="space-y-5">
+                                        <div class="w-full">
+                                            <label class="label-text">苹果 Bark URL</label>
+                                            <input type="text" id="ipt_barkUrl" placeholder="https://api.day.app/xxx" class="input-field">
+                                        </div>
+                                        <div class="w-full">
+                                            <label class="label-text">通知接收邮箱 (需配好系统SMTP)</label>
+                                            <input type="text" id="ipt_email" placeholder="example@qq.com" class="input-field">
+                                        </div>
+                                        <div class="w-full">
+                                            <label class="label-text">Telegram Chat ID</label>
+                                            <input type="text" id="ipt_tgChatId" placeholder="纯数字 ID" class="input-field">
+                                        </div>
+                                        <div class="w-full">
+                                            <label class="label-text">企业微信 Webhook</label>
+                                            <input type="text" id="ipt_wecomUrl" placeholder="https://qyapi.weixin.qq.com/..." class="input-field">
+                                        </div>
+                                        <div class="w-full">
+                                            <label class="label-text">钉钉 Webhook</label>
+                                            <input type="text" id="ipt_dingtalkUrl" placeholder="https://oapi.dingtalk.com/..." class="input-field">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -125,7 +189,9 @@
                         <div class="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-300 overflow-hidden flex flex-col h-fit">
                             <div class="p-4 sm:p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
                                 <h2 class="font-bold text-slate-800">📋 动态车主列表</h2>
-                                <button onclick="loadData()" class="text-sm text-blue-600 font-bold hover:bg-blue-100 px-3 py-1.5 rounded-lg transition flex items-center bg-white border border-blue-200 shadow-sm"><span class="mr-1">🔄</span> 刷新列表</button>
+                                <button onclick="loadData()" class="text-sm text-blue-600 font-bold hover:bg-blue-100 px-3 py-1.5 rounded-lg transition flex items-center bg-white border border-blue-200 shadow-sm">
+                                    <span class="mr-1">🔄</span> 刷新列表
+                                </button>
                             </div>
                             <div class="overflow-x-auto custom-scrollbar">
                                 <table class="min-w-full divide-y divide-slate-200">
@@ -144,6 +210,7 @@
                 </div>
 
                 <div id="tab-settings" class="hidden space-y-6 animate-[fadeIn_0.3s_ease-out] max-w-4xl mx-auto">
+                    
                     <div class="bg-slate-50 rounded-2xl shadow-sm border border-slate-300 overflow-hidden">
                         <div class="p-5 border-b border-slate-200 bg-white">
                             <h2 class="font-bold text-slate-800 text-lg flex items-center"><span class="mr-2">🌐</span> 基础全局设置</h2>
@@ -152,27 +219,35 @@
                             <div class="md:col-span-2">
                                 <label class="label-text text-blue-600">外网访问主域名 (必须 https://开头)</label>
                                 <input type="text" id="sys_domain" value="<%= sys.domain || '' %>" placeholder="点击输入: https://car.xxxxx.com" class="input-field border-blue-300 ring-4 ring-blue-50/50">
+                                <p class="text-xs text-slate-400 mt-2 font-medium">保存后，生成的二维码链接和系统通知链接将全部自动应用新域名。</p>
                             </div>
-                            <div><label class="label-text">🤖 WxPusher 官方 AppToken</label><input type="text" id="sys_wxApp" value="<%= sys.wxpusherAppToken || '' %>" placeholder="点击输入 AT_xxxxx" class="input-field"></div>
-                            <div><label class="label-text">✈️ Telegram Bot Token</label><input type="text" id="sys_tgBot" value="<%= sys.tgBotToken || '' %>" placeholder="点击输入 Token" class="input-field"></div>
+                            <div class="w-full">
+                                <label class="label-text">🤖 WxPusher 官方 AppToken</label>
+                                <input type="text" id="sys_wxApp" value="<%= sys.wxpusherAppToken || '' %>" placeholder="点击输入 AT_xxxxx" class="input-field">
+                            </div>
+                            <div class="w-full">
+                                <label class="label-text">✈️ Telegram Bot Token</label>
+                                <input type="text" id="sys_tgBot" value="<%= sys.tgBotToken || '' %>" placeholder="点击输入 Token" class="input-field">
+                            </div>
                         </div>
                     </div>
 
                     <div class="bg-slate-50 rounded-2xl shadow-sm border border-slate-300 overflow-hidden">
                         <div class="p-5 border-b border-slate-200 bg-white flex justify-between items-center">
                             <h2 class="font-bold text-slate-800 text-lg flex items-center"><span class="mr-2">📧</span> 邮件发件服务器 (SMTP)</h2>
+                            <span class="text-xs text-slate-600 font-bold bg-slate-100 px-3 py-1.5 rounded-md border border-slate-200 shadow-sm">支持主流邮箱发件</span>
                         </div>
                         <div class="p-6">
                             <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                                    <div><label class="label-text">SMTP 服务器地址</label><input type="text" id="sys_smtpHost" value="<%= sys.smtpHost || '' %>" class="input-field"></div>
-                                    <div><label class="label-text">端口 (通常为 465 或 587)</label><input type="text" id="sys_smtpPort" value="<%= sys.smtpPort || '465' %>" class="input-field"></div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                    <div class="w-full"><label class="label-text">SMTP 服务器地址</label><input type="text" id="sys_smtpHost" value="<%= sys.smtpHost || '' %>" placeholder="如: smtp.qq.com" class="input-field"></div>
+                                    <div class="w-full"><label class="label-text">端口 (通常为 465 或 587)</label><input type="text" id="sys_smtpPort" value="<%= sys.smtpPort || '465' %>" placeholder="点击输入..." class="input-field"></div>
                                 </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                                    <div><label class="label-text">发件账号 (User)</label><input type="text" id="sys_smtpUser" value="<%= sys.smtpUser || '' %>" class="input-field"></div>
-                                    <div><label class="label-text">授权码 (Password)</label><input type="password" id="sys_smtpPass" value="<%= sys.smtpPass || '' %>" class="input-field"></div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                    <div class="w-full"><label class="label-text">发件账号 (User)</label><input type="text" id="sys_smtpUser" value="<%= sys.smtpUser || '' %>" placeholder="点击输入发件邮箱..." class="input-field"></div>
+                                    <div class="w-full"><label class="label-text">授权码 (Password)</label><input type="password" id="sys_smtpPass" value="<%= sys.smtpPass || '' %>" placeholder="点击输入密码或授权码..." class="input-field"></div>
                                 </div>
-                                <div><label class="label-text">自定义发件人名称 (可选)</label><input type="text" id="sys_smtpFrom" value="<%= sys.smtpFrom || '' %>" class="input-field"></div>
+                                <div class="w-full"><label class="label-text">自定义发件人名称 (可选)</label><input type="text" id="sys_smtpFrom" value="<%= sys.smtpFrom || '' %>" placeholder="如: 挪车小助手 <bot@xxx.com>" class="input-field"></div>
                             </div>
                         </div>
                     </div>
@@ -180,6 +255,7 @@
                     <div class="flex justify-end pt-2 pb-10">
                         <button onclick="saveSystem()" class="bg-slate-900 text-white px-10 py-3.5 rounded-xl font-bold hover:bg-black focus:ring-4 focus:ring-slate-500/30 transition-all shadow-lg shadow-slate-900/20 active:scale-[0.98]">💾 确认并保存全局设置</button>
                     </div>
+
                 </div>
 
                 <div id="tab-templates" class="hidden space-y-6 animate-[fadeIn_0.3s_ease-out] max-w-6xl mx-auto">
@@ -208,7 +284,14 @@
         let currentToken = localStorage.getItem('movecar_admin_token') || '';
         let usersDataCache = []; 
 
-        window.onload = () => { if (currentToken) { document.getElementById('adminPwd').value = currentToken; login(); } else { document.getElementById('loginView').style.display = 'flex'; } };
+        window.onload = () => { 
+            if (currentToken) { 
+                document.getElementById('adminPwd').value = currentToken; 
+                login(); 
+            } else {
+                document.getElementById('loginView').style.display = 'flex';
+            }
+        };
 
         async function login() {
             const pwd = document.getElementById('adminPwd').value;
@@ -218,10 +301,13 @@
             try {
                 const res = await fetch(`/admin/api/users?token=${currentToken}`);
                 const result = await res.json();
-                if(!result.success) { localStorage.removeItem('movecar_admin_token'); document.getElementById('loginView').style.display = 'flex'; return alert('授权码错误，请重试'); }
+                if(!result.success) { 
+                    localStorage.removeItem('movecar_admin_token'); 
+                    document.getElementById('loginView').style.display = 'flex';
+                    return alert('授权码错误，请重试'); 
+                }
                 
                 localStorage.setItem('movecar_admin_token', currentToken);
-                // 登录时设置透明度为0，并过渡隐藏
                 document.getElementById('loginView').style.opacity = '0';
                 setTimeout(() => {
                     document.getElementById('loginView').style.display = 'none';
@@ -235,21 +321,12 @@
             } catch (e) { alert('网络错误，请检查服务是否正常'); }
         }
 
-        // ⭐ 修复了退出登录的动画逻辑，重置 opacity，防止空白闪屏
         function logout() {
-            localStorage.removeItem('movecar_admin_token'); 
-            currentToken = ''; 
-            document.getElementById('adminPwd').value = '';
-            
-            // 隐藏主应用区
+            localStorage.removeItem('movecar_admin_token'); currentToken = ''; document.getElementById('adminPwd').value = '';
             document.getElementById('appView').classList.add('hidden'); 
-            
-            // 显示登录区，并确保不透明度被恢复为 1
             const loginView = document.getElementById('loginView');
             loginView.style.display = 'flex';
-            setTimeout(() => {
-                loginView.style.opacity = '1';
-            }, 50);
+            setTimeout(() => { loginView.style.opacity = '1'; }, 50);
         }
 
         function switchTab(tabId) {
@@ -310,11 +387,7 @@
             const rawText = document.getElementById('ipt_templates').value.trim();
             
             let parsedJson;
-            try {
-                parsedJson = JSON.parse(rawText);
-            } catch (e) {
-                return alert('❌ 格式错误：您输入的不是合法的 JSON，请检查引号、逗号或括号是否匹配！\n\n' + e.message);
-            }
+            try { parsedJson = JSON.parse(rawText); } catch (e) { return alert('❌ 格式错误：您输入的不是合法的 JSON，请检查引号、逗号或括号是否匹配！\n\n' + e.message); }
 
             btn.innerText = '保存中...'; btn.disabled = true;
             try {
@@ -347,53 +420,105 @@
         function renderTable(users) {
             const tbody = document.getElementById('userTableBody'); tbody.innerHTML = '';
             if(users.length === 0) return tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-16 text-center text-slate-400 font-medium">系统空空如也，快去左侧添加第一辆车吧</td></tr>';
+
             users.forEach(u => {
                 const fullUrl = currentDomain ? `${currentDomain}/?u=${u.userKey}` : '';
-                const urlHtml = currentDomain ? `<div class="font-bold text-slate-800 mb-1.5">${u.carTitle || u.userKey}</div><div class="flex items-center space-x-2"><a href="${fullUrl}" target="_blank" class="text-blue-600 hover:underline text-xs truncate max-w-[180px] sm:max-w-[250px] font-bold">${fullUrl}</a><button onclick="copyToClipboard('${fullUrl}', this)" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-[10px] font-black px-2.5 py-1 rounded shadow-sm transition active:scale-95">复制</button></div>` : `<div class="font-bold text-slate-800 mb-1.5">${u.carTitle || u.userKey}</div><span class="text-red-500 text-xs font-bold bg-red-50 px-2 py-1 rounded border border-red-200 shadow-sm">未配域名，链接不可用</span>`;
+                const urlHtml = currentDomain 
+                    ? `<div class="font-bold text-slate-800 mb-1.5">${u.carTitle || u.userKey}</div><div class="flex items-center space-x-2"><a href="${fullUrl}" target="_blank" class="text-blue-600 hover:underline text-xs truncate max-w-[180px] sm:max-w-[250px] font-bold">${fullUrl}</a><button onclick="copyToClipboard('${fullUrl}', this)" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-[10px] font-black px-2.5 py-1 rounded shadow-sm transition active:scale-95">复制</button></div>`
+                    : `<div class="font-bold text-slate-800 mb-1.5">${u.carTitle || u.userKey}</div><span class="text-red-500 text-xs font-bold bg-red-50 px-2 py-1 rounded border border-red-200 shadow-sm">未配域名，链接不可用</span>`;
+
                 let tags = [];
                 if(u.phone) tags.push('📞 手机号');
                 if(u.wxpusherUid) tags.push('WxPusher'); if(u.pushplusToken) tags.push('PushPlus'); if(u.serverChanKey) tags.push('Server酱');
                 if(u.barkUrl) tags.push('Bark'); if(u.email) tags.push('Email'); if(u.tgChatId) tags.push('TG');
                 if(u.wecomUrl) tags.push('企微'); if(u.dingtalkUrl) tags.push('钉钉');
                 const tagHtml = tags.length > 0 ? tags.map(t => `<span class="bg-indigo-50 text-indigo-700 text-[11px] font-bold px-2.5 py-1 rounded-md mr-1.5 mb-1.5 inline-block border border-indigo-200 shadow-sm">${t}</span>`).join('') : '<span class="text-slate-400 text-xs italic bg-slate-50 px-2 py-1 rounded border border-slate-200 shadow-sm">暂无推送</span>';
+
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-blue-50/30 transition-colors";
-                tr.innerHTML = `<td class="px-4 sm:px-6 py-4 whitespace-nowrap">${urlHtml}</td><td class="px-4 sm:px-6 py-4 max-w-[200px] sm:max-w-[300px] flex-wrap align-top pt-5">${tagHtml}</td><td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium align-top pt-5"><div class="flex justify-end space-x-2"><button onclick="editUser('${u.userKey}')" class="text-blue-600 hover:text-blue-800 bg-white border border-blue-200 hover:border-blue-400 hover:bg-blue-50 px-3 py-1.5 rounded-lg shadow-sm transition font-black active:scale-95">编辑</button><a href="${currentDomain ? currentDomain+'/qr?u='+u.userKey : '#'}" target="_blank" class="text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-200 hover:border-indigo-400 px-3 py-1.5 rounded-lg shadow-sm transition font-black ${!currentDomain ? 'hidden' : ''} active:scale-95">挪车码</a><button onclick="deleteUser('${u.userKey}')" class="text-red-500 hover:text-red-700 bg-white border border-red-200 hover:border-red-400 hover:bg-red-50 px-3 py-1.5 rounded-lg transition font-black shadow-sm active:scale-95">删除</button></div></td>`;
+                tr.innerHTML = `
+                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap">${urlHtml}</td>
+                    <td class="px-4 sm:px-6 py-4 max-w-[200px] sm:max-w-[300px] flex-wrap align-top pt-5">${tagHtml}</td>
+                    <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium align-top pt-5">
+                        <div class="flex justify-end space-x-2">
+                            <button onclick="editUser('${u.userKey}')" class="text-blue-600 hover:text-blue-800 bg-white border border-blue-200 hover:border-blue-400 hover:bg-blue-50 px-3 py-1.5 rounded-lg shadow-sm transition font-black active:scale-95">编辑</button>
+                            <a href="${currentDomain ? currentDomain+'/qr?u='+u.userKey : '#'}" target="_blank" class="text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-200 hover:border-indigo-400 px-3 py-1.5 rounded-lg shadow-sm transition font-black ${!currentDomain ? 'hidden' : ''} active:scale-95">挪车码</a>
+                            <button onclick="deleteUser('${u.userKey}')" class="text-red-500 hover:text-red-700 bg-white border border-red-200 hover:border-red-400 hover:bg-red-50 px-3 py-1.5 rounded-lg transition font-black shadow-sm active:scale-95">删除</button>
+                        </div>
+                    </td>`;
                 tbody.appendChild(tr);
             });
         }
 
         const fields = ['userKey','carTitle','phone','pushplusToken','barkUrl','wxpusherUid','serverChanKey','tgChatId','email','wecomUrl','dingtalkUrl'];
+        
         function editUser(key) {
             const user = usersDataCache.find(u => u.userKey === key); if(!user) return;
             fields.forEach(f => document.getElementById('ipt_' + f).value = user[f] || '');
-            const iptKey = document.getElementById('ipt_userKey'); iptKey.readOnly = true; iptKey.classList.replace('bg-slate-100', 'bg-slate-200'); iptKey.classList.add('cursor-not-allowed', 'opacity-60');
+            
+            const iptKey = document.getElementById('ipt_userKey'); 
+            iptKey.readOnly = true; 
+            iptKey.classList.replace('bg-slate-100', 'bg-slate-200');
+            iptKey.classList.add('cursor-not-allowed', 'opacity-60');
+
             document.getElementById('formTitle').innerHTML = `✏️ 编辑：<span class="text-blue-600 ml-1">${key}</span>`;
-            document.getElementById('saveUserBtn').innerText = '💾 更新车主配置'; document.getElementById('cancelEditBtn').classList.remove('hidden');
+            document.getElementById('saveUserBtn').innerText = '💾 更新车主配置'; 
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            
             document.getElementById('formCard').classList.add('ring-4', 'ring-blue-300', 'shadow-xl');
             if (window.innerWidth < 1280) document.querySelector('main').scrollTo({ top: 0, behavior: 'smooth' });
         }
+
         function resetForm() {
             fields.forEach(f => document.getElementById('ipt_' + f).value = '');
-            const iptKey = document.getElementById('ipt_userKey'); iptKey.readOnly = false; iptKey.classList.replace('bg-slate-200', 'bg-slate-100'); iptKey.classList.remove('cursor-not-allowed', 'opacity-60');
+            
+            const iptKey = document.getElementById('ipt_userKey'); 
+            iptKey.readOnly = false; 
+            iptKey.classList.replace('bg-slate-200', 'bg-slate-100');
+            iptKey.classList.remove('cursor-not-allowed', 'opacity-60');
+
             document.getElementById('formTitle').innerHTML = '<span class="mr-2">✨</span> 新增车主';
-            document.getElementById('saveUserBtn').innerText = '💾 保存车主配置'; document.getElementById('cancelEditBtn').classList.add('hidden');
+            document.getElementById('saveUserBtn').innerText = '💾 保存车主配置'; 
+            document.getElementById('cancelEditBtn').classList.add('hidden');
             document.getElementById('formCard').classList.remove('ring-4', 'ring-blue-300', 'shadow-xl');
         }
+
         async function saveUser() {
             if(!currentToken) return;
             let payload = {}; fields.forEach(f => payload[f] = document.getElementById('ipt_' + f).value.trim());
             if(!payload.userKey) return alert('必须填写唯一标识！');
-            const btn = document.getElementById('saveUserBtn'); const originalText = btn.innerText; btn.innerText = '保存中...'; btn.disabled = true;
-            try { const res = await fetch(`/admin/api/users?token=${currentToken}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); if((await res.json()).success) { resetForm(); loadData(); } else alert('保存失败'); } catch(e) {}
+            
+            const btn = document.getElementById('saveUserBtn');
+            const originalText = btn.innerText;
+            btn.innerText = '保存中...'; btn.disabled = true;
+
+            try {
+                const res = await fetch(`/admin/api/users?token=${currentToken}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                if((await res.json()).success) { resetForm(); loadData(); } else alert('保存失败');
+            } catch(e) {}
+            
             btn.innerText = originalText; btn.disabled = false;
         }
+
         async function deleteUser(key) {
             if(!confirm(`确定删除车主 [${key}] 吗？\n删除后该车主的所有推送将彻底失效！`)) return;
-            try { const res = await fetch(`/admin/api/users/${key}?token=${currentToken}`, { method: 'DELETE' }); if((await res.json()).success) loadData(); } catch(e) { alert('删除失败'); }
+            try {
+                const res = await fetch(`/admin/api/users/${key}?token=${currentToken}`, { method: 'DELETE' });
+                if((await res.json()).success) loadData();
+            } catch(e) { alert('删除失败'); }
         }
+
         async function copyToClipboard(text, btn) {
-            try { await navigator.clipboard.writeText(text); const old = btn.innerText; btn.innerText = '已复制'; btn.classList.add('bg-green-100', 'text-green-700', 'border-green-400'); setTimeout(() => { btn.innerText = old; btn.classList.remove('bg-green-100', 'text-green-700', 'border-green-400'); }, 1500); } catch(e){}
+            try { 
+                await navigator.clipboard.writeText(text); 
+                const old = btn.innerText; 
+                btn.innerText = '已复制'; 
+                btn.classList.add('bg-green-100', 'text-green-700', 'border-green-400');
+                setTimeout(() => {
+                    btn.innerText = old;
+                    btn.classList.remove('bg-green-100', 'text-green-700', 'border-green-400');
+                }, 1500); 
+            } catch(e){}
         }
     </script>
 </body>
