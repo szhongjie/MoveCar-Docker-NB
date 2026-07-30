@@ -16,7 +16,7 @@ class Notifier {
     static async sendBark(barkUrl, title, content, confirmUrl) {
         if (!barkUrl) return;
         const baseUrl = barkUrl.replace(/\/$/, "");
-        const url = `${baseUrl}/${encodeURIComponent(title)}/${encodeURIComponent(content)}?url=${encodeURIComponent(confirmUrl)}&icon=https://cdn-icons-png.flaticon.com/512/3204/3204121.png`;
+        const url = `${baseUrl}/${encodeURIComponent(title)}/${encodeURIComponent(content)}?url=${encodeURIComponent(confirmUrl)}&icon=https://host.851229.xyz/mydog.png`;
         try { await fetch(url); } catch (e) { console.error('Bark Error:', e); }
     }
 
@@ -74,7 +74,7 @@ class Notifier {
                                 title: title,                                        // 卡片主标题
                                 description: `${content}\n\n👇 点击本卡片立即处理`, // 卡片灰色副标题/摘要
                                 url: confirmUrl,                                     // 点击卡片跳转的链接
-                                picurl: 'https://cdn-icons-png.flaticon.com/512/3204/3204121.png' // 右侧的高清小汽车缩略图
+                                picurl: 'https://host.851229.xyz/mydog.png' // 右侧的高清小汽车缩略图
                             }
                         ]
                     } 
